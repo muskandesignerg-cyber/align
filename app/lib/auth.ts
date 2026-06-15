@@ -6,14 +6,15 @@ import { supabase } from './supabase';
 // Required for OAuth redirect handling on native
 WebBrowser.maybeCompleteAuthSession();
 
-// Build the redirect URI depending on platform
-// Guard against window not being defined (native env)
+// Build the redirect URI depending on platform and environment.
+// On web: uses the current origin automatically (works for both localhost AND Netlify).
+// On native: uses the app's deep-link scheme.
 const getRedirectUri = (): string => {
-  if (Platform.OS === 'web') {
-    // Safe check for SSR / non-browser environments
-    if (typeof window !== 'undefined') {
-      return `${window.location.origin}/auth/callback`;
-    }
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    // Dynamically uses whatever domain the app is running on:
+    // - http://localhost:8081  (local dev)
+    // - https://talent-logic-app.netlify.app  (production)
+    return `${window.location.origin}/auth/callback`;
   }
   return makeRedirectUri({
     scheme: 'talent-logic',

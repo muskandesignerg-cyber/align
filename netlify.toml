@@ -1,0 +1,17 @@
+# Netlify configuration for TALENT.LOGIC (Expo Web SPA)
+
+[build]
+  command = "npx expo export --platform web"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "18"
+  # EXPO_PUBLIC_GROQ_API_KEY must be set in Netlify Dashboard → Environment Variables
+
+# ─── SPA fallback ─────────────────────────────────────────────────────────────
+# All routes (including /auth/callback) serve index.html so React Navigation
+# handles the route client-side instead of returning a 404.
+[[redirects]]
+  from = "/*"
+  to   = "/index.html"
+  status = 200
