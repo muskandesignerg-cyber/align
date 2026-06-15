@@ -36,6 +36,7 @@ import {
   Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Mail, ArrowRight, ArrowLeft } from 'lucide-react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { OnboardingStackParamList } from '../navigation/OnboardingNavigator';
@@ -407,20 +408,59 @@ export const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   // ── Success state ─────────────────────────────────────────────────────────
   if (success) {
     return (
-      <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
-        <View style={s.successWrap}>
-          <Text style={s.successEmoji}>📧</Text>
-          <Text style={s.successTitle}>Check your inbox!</Text>
-          <Text style={s.successSub}>
-            We sent a confirmation link to{'\n'}
-            <Text style={s.successEmail}>{email}</Text>
+      <SafeAreaView style={[s.safe, { backgroundColor: '#FFFFFF' }]} edges={['top', 'bottom']}>
+        {/* Back Arrow - Top Left */}
+        <TouchableOpacity
+          style={{ position: 'absolute', top: 60, left: 20, zIndex: 10, padding: 10 }}
+          onPress={() => setSuccess(false)}
+          activeOpacity={0.7}
+        >
+          <ArrowLeft size={22} color="#0A0A0A" strokeWidth={2} />
+        </TouchableOpacity>
+
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, backgroundColor: '#FFFFFF' }}>
+          {/* Icon Box */}
+          <View style={{ width: 72, height: 72, backgroundColor: '#EEF2FF', borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginBottom: 32 }}>
+            <Mail size={32} color="#4F46E5" strokeWidth={2} />
+          </View>
+          
+          {/* Heading */}
+          <Text style={{ fontSize: 28, fontWeight: '700', color: '#0A0A0A', textAlign: 'center', marginBottom: 12 }}>
+            Check your inbox!
           </Text>
+          
+          {/* Subtitle */}
+          <Text style={{ fontSize: 15, fontWeight: '400', color: '#888888', textAlign: 'center', marginBottom: 6 }}>
+            We sent a confirmation link to
+          </Text>
+          
+          {/* Email Address */}
+          <Text style={{ fontSize: 15, fontWeight: '600', color: '#4F46E5', textAlign: 'center', marginBottom: 40 }}>
+            {email}
+          </Text>
+          
+          {/* Primary Button */}
           <TouchableOpacity
-            style={s.successBtn}
+            style={{ width: '100%', height: 52, backgroundColor: '#4F46E5', borderRadius: 14, shadowColor: '#4F46E5', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 16, elevation: 4, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginBottom: 16 }}
             onPress={() => navigation.navigate('SignIn')}
             activeOpacity={0.85}
           >
-            <Text style={s.successBtnText}>Go to Sign In →</Text>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFFFFF' }}>Go to Sign In</Text>
+            <ArrowRight size={18} color="#FFFFFF" strokeWidth={2} />
+          </TouchableOpacity>
+
+          {/* Resend Link */}
+          <TouchableOpacity onPress={() => handleSignUp()} activeOpacity={0.7} style={{ marginBottom: 40 }}>
+            <Text style={{ fontSize: 14, fontWeight: '500', color: '#888888', textAlign: 'center' }}>
+              Didn't receive it? <Text style={{ color: '#4F46E5', fontWeight: '600', textDecorationLine: 'underline' }}>Resend email</Text>
+            </Text>
+          </TouchableOpacity>
+
+          {/* Back Link */}
+          <TouchableOpacity onPress={() => setSuccess(false)} activeOpacity={0.7}>
+            <Text style={{ fontSize: 14, fontWeight: '500', color: '#AAAAAA', textAlign: 'center' }}>
+              ← Back to Sign Up
+            </Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>

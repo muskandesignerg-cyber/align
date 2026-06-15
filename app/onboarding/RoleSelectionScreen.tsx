@@ -24,6 +24,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -54,14 +55,23 @@ type Props = NativeStackScreenProps<OnboardingStackParamList, 'RoleSelection'>;
 interface RoleCardProps {
   title: string;
   subtitle: string;
-  iconName: React.ComponentProps<typeof Ionicons>['name'];
+  iconName: keyof typeof Ionicons.glyphMap;
   selected: boolean;
   onPress: () => void;
   entranceAnim: Animated.Value;
+  fixedIconBg?: string;
+  imageSource?: any;
 }
 
 const RoleCard: React.FC<RoleCardProps> = ({
-  title, subtitle, iconName, selected, onPress, entranceAnim,
+  title,
+  subtitle,
+  iconName,
+  selected,
+  onPress,
+  entranceAnim,
+  fixedIconBg,
+  imageSource,
 }) => {
   // Selection progress 0 → 1
   const selAnim = useRef(new Animated.Value(selected ? 1 : 0)).current;
@@ -113,14 +123,8 @@ const RoleCard: React.FC<RoleCardProps> = ({
   };
 
   // Interpolated colors
-  const cardBg = selAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['#FFFFFF', BRAND_LITE],
-  });
-  const borderColor = selAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [BORDER_DEF, BRAND],
-  });
+  const cardBg = '#FFFFFF';
+  const borderColor = '#E8E8E8';
   const iconBg = selAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [BRAND_LITE, BRAND],
@@ -182,16 +186,23 @@ const RoleCard: React.FC<RoleCardProps> = ({
             style={[
               cardStyles.iconWrap,
               {
-                backgroundColor: iconBg,
+                backgroundColor: fixedIconBg ? fixedIconBg : iconBg,
                 transform: [{ scale: iconScale }],
               } as any,
             ]}
           >
-            <Ionicons
-              name={iconName}
-              size={26}
-              color={selected ? '#FFFFFF' : BRAND}
-            />
+            {imageSource ? (
+              <Image 
+                source={imageSource} 
+                style={{ width: 28, height: 28, tintColor: '#FFFFFF', resizeMode: 'contain' }} 
+              />
+            ) : (
+              <Ionicons
+                name={iconName}
+                size={26}
+                color={selected ? '#FFFFFF' : BRAND}
+              />
+            )}
           </Animated.View>
 
           {/* Text */}
@@ -341,9 +352,12 @@ export const RoleSelectionScreen: React.FC<Props> = ({ navigation }) => {
             },
           ]}
         >
-          {/* Lightning bolt badge */}
+          {/* Top Logo Badge */}
           <View style={styles.iconBadge}>
-            <Ionicons name="flash" size={20} color={BRAND} />
+            <Image 
+              source={require('../../assets/images/align-icon.png')} 
+              style={{ width: 28, height: 28, resizeMode: 'contain', tintColor: BRAND }} 
+            />
           </View>
 
           <Text style={styles.heading}>I am a...</Text>
@@ -454,9 +468,8 @@ const cardStyles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 18,
-    paddingVertical: 18,
-    paddingHorizontal: 20,
+    borderRadius: 16,
+    padding: 16,
     ...cardShadow,
   },
   iconWrap: {

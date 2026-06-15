@@ -10,6 +10,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MainStackParamList } from '../navigation/MainTabNavigator';
 import { Job } from '../types/jobs';
 import { useDiscover } from '../context/DiscoverContext';
+import type { Assessment, InterviewSession } from '../types/assessment';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -101,6 +102,18 @@ export const JobDetailScreen: React.FC = () => {
   const postedDate        = route.params?.postedDate ?? 'Applied Today';
   const { applyToJob, isJobApplied } = useDiscover();
 
+  // Derive the pipeline round from applicationStatus
+  // 'Applied' | 'In Review'  → Round 1 (just applied)
+  // 'Assessment Sent'         → Round 2 (MCQ assessment)
+  // 'Interviewing'            → Round 3 (AI interview)
+  // 'Offer'                   → Hired!
+  type PipelineRound = 'applied' | 'assessment' | 'interview' | 'hired';
+  const pipelineRound: PipelineRound =
+    appStatus === 'Offer'           ? 'hired'
+    : appStatus === 'Interviewing'  ? 'interview'
+    : appStatus === 'Assessment Sent' ? 'assessment'
+    : 'applied';
+
   const [isSaved, setIsSaved]      = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setIsLoading]   = useState(false);
@@ -180,19 +193,37 @@ export const JobDetailScreen: React.FC = () => {
       {fromDashboard && (
         <View style={[
           styles.statusBanner,
-          appStatus === 'In Review' && styles.statusBannerAmber,
+          pipelineRound === 'assessment' && styles.statusBannerPurple,
+          pipelineRound === 'interview'  && styles.statusBannerGreen,
+          pipelineRound === 'hired'      && styles.statusBannerGold,
+          (pipelineRound === 'applied')  && styles.statusBannerBlue,
         ]}>
           <Ionicons
-            name={appStatus === 'In Review' ? 'time-outline' : 'checkmark-circle-outline'}
+            name={
+              pipelineRound === 'assessment' ? 'flask-outline'
+              : pipelineRound === 'interview' ? 'mic-outline'
+              : pipelineRound === 'hired'     ? 'ribbon-outline'
+              : 'checkmark-circle-outline'
+            }
             size={16}
-            color={appStatus === 'In Review' ? '#F59E0B' : '#4F46E5'}
+            color={
+              pipelineRound === 'assessment' ? '#4F46E5'
+              : pipelineRound === 'interview' ? '#10B981'
+              : pipelineRound === 'hired'     ? '#F59E0B'
+              : '#4F46E5'
+            }
           />
           <Text style={[
             styles.statusBannerText,
-            appStatus === 'In Review' && styles.statusBannerTextAmber,
+            pipelineRound === 'interview' && { color: '#10B981' },
+            pipelineRound === 'hired'     && { color: '#F59E0B' },
           ]}>
-            {appStatus === 'In Review'
-              ? `Application in review · ${postedDate}`
+            {pipelineRound === 'assessment'
+              ? `You're selected for Round 2 · ${postedDate}`
+              : pipelineRound === 'interview'
+              ? `You passed Round 2 · Round 3 awaits!`
+              : pipelineRound === 'hired'
+              ? `Congratulations! You got the offer 🎉`
               : `You applied for this role · ${postedDate}`}
           </Text>
         </View>
@@ -326,15 +357,88 @@ export const JobDetailScreen: React.FC = () => {
         <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* ── FIXED APPLY BAR ─────────────────────────────────────────── */}
+      {/* ── FIXED BOTTOM BAR ─────────────────────────────────────────── */}
       <View style={styles.applyBar}>
         {fromDashboard ? (
-          /* Already applied — green non-tappable button */
-          <View style={styles.applyBtnSuccess}>
-            <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />
-            <Text style={styles.applyBtnText}>Applied Successfully</Text>
-          </View>
+          // ── Dashboard mode: show pipeline-aware CTA ──────────────────
+          pipelineRound === 'assessment' ? (
+            // ROUND 2 — Take Assessment
+            <>
+              <View style={styles.roundBadgeRow}>
+                <View style={[styles.roundDot, { backgroundColor: '#4F46E5' }]} />
+                <Text style={styles.roundLabel}>Round 2 — Technical Assessment</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.applyBtnAssessment}
+                activeOpacity={0.85}
+                onPress={() => {
+                  const assessment: Assessment = {
+                    id: `assess-${job.id ?? 'demo'}`,
+                    jobId: job.id ?? 'demo',
+                    candidateId: 'me',
+                    companyName: displayCompany,
+                    roleTitle: displayTitle,
+                    skills: skills,
+                    questions: [],
+                    timeLimit: 30,
+                    passingScore: 70,
+                    createdAt: new Date().toISOString(),
+                    createdBy: 'ai',
+                  };
+                  navigation.navigate('AssessmentIntro', { assessment });
+                }}
+              >
+                <Ionicons name="flask-outline" size={18} color="#FFFFFF" />
+                <Text style={styles.applyBtnText}>Start Round 2 Assessment →</Text>
+              </TouchableOpacity>
+              <Text style={styles.applySubText}>Complete to advance to the interview round</Text>
+            </>
+          ) : pipelineRound === 'interview' ? (
+            // ROUND 3 — AI Interview
+            <>
+              <View style={styles.roundBadgeRow}>
+                <View style={[styles.roundDot, { backgroundColor: '#10B981' }]} />
+                <Text style={[styles.roundLabel, { color: '#10B981' }]}>Round 3 — AI Interview</Text>
+              </View>
+              <TouchableOpacity
+                style={[styles.applyBtnAssessment, { backgroundColor: '#10B981' }]}
+                activeOpacity={0.85}
+                onPress={() => {
+                  const session: InterviewSession = {
+                    id: `session-${job.id ?? 'demo'}`,
+                    jobId: job.id ?? 'demo',
+                    candidateId: 'me',
+                    companyName: displayCompany,
+                    roleTitle: displayTitle,
+                    focus: 'Technical',
+                    questions: [],
+                    timeLimit: 20,
+                    passingScore: 65,
+                    createdAt: new Date().toISOString(),
+                  };
+                  navigation.navigate('InterviewIntro', { session });
+                }}
+              >
+                <Ionicons name="mic-outline" size={18} color="#FFFFFF" />
+                <Text style={styles.applyBtnText}>Begin AI Interview →</Text>
+              </TouchableOpacity>
+              <Text style={styles.applySubText}>Your responses are scored by AI in real time</Text>
+            </>
+          ) : pipelineRound === 'hired' ? (
+            // HIRED
+            <View style={styles.applyBtnSuccess}>
+              <Ionicons name="ribbon-outline" size={18} color="#FFFFFF" />
+              <Text style={styles.applyBtnText}>🎉 Offer Received — Congratulations!</Text>
+            </View>
+          ) : (
+            // ROUND 1 — Applied
+            <View style={styles.applyBtnSuccess}>
+              <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />
+              <Text style={styles.applyBtnText}>Applied Successfully</Text>
+            </View>
+          )
         ) : (
+          // ── Discover mode: normal apply button ───────────────────────
           <TouchableOpacity
             style={[
               styles.applyBtn,
@@ -491,17 +595,40 @@ const styles = StyleSheet.create({
   applyBtnSuccess: {
     height: 56, backgroundColor: '#22C55E', borderRadius: 16,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    marginBottom: 8,
   },
 
-  // Status banner below top bar (Dashboard → Detail)
+  // Purple "Start Round 2" / Green "Begin AI Interview" button
+  applyBtnAssessment: {
+    height: 56, backgroundColor: '#4F46E5', borderRadius: 16,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    marginBottom: 8,
+    ...Platform.select({
+      web: { boxShadow: '0 4px 20px rgba(79,70,229,0.30)' } as any,
+      default: { shadowColor: '#4F46E5', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.28, shadowRadius: 12, elevation: 8 },
+    }),
+  },
+
+  // Round indicator row (● Round 2 — Technical Assessment)
+  roundBadgeRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    marginBottom: 10,
+  },
+  roundDot: { width: 8, height: 8, borderRadius: 4 },
+  roundLabel: { fontSize: 13, fontWeight: '700', color: '#4F46E5' },
+
+  // Status banner variants
   statusBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: '#EEF2FF', borderBottomWidth: 1, borderBottomColor: '#C7D2FE',
     paddingHorizontal: 20, paddingVertical: 10,
   },
-  statusBannerAmber: {
-    backgroundColor: '#FFF7ED', borderBottomColor: '#FED7AA',
-  },
-  statusBannerText: { fontSize: 13, fontWeight: '500', color: '#4F46E5', flex: 1 },
+  statusBannerBlue:   { backgroundColor: '#EEF2FF', borderBottomColor: '#C7D2FE' },
+  statusBannerPurple: { backgroundColor: '#F0F0FF', borderBottomColor: '#C7C8F0' },
+  statusBannerGreen:  { backgroundColor: '#F0FDF4', borderBottomColor: '#BBF7D0' },
+  statusBannerGold:   { backgroundColor: '#FFFBEB', borderBottomColor: '#FDE68A' },
+  statusBannerAmber:  { backgroundColor: '#FFF7ED', borderBottomColor: '#FED7AA' },
+  statusBannerText:   { fontSize: 13, fontWeight: '500', color: '#4F46E5', flex: 1 },
   statusBannerTextAmber: { color: '#F59E0B' },
 });
+

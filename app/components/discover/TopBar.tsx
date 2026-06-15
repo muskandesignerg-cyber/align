@@ -1,37 +1,55 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { FontFamily } from '../../theme/typography';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image } from 'react-native';
+import { Bell, Heart, Search } from 'lucide-react-native';
 
 /**
  * TopBar — Discover screen header.
- * Left:  "Hi Hridya 👋" greeting + subtitle
- * Right: Bell (with red dot) + Heart outline icon
+ * Row 1: "Align" text logo (left) + Bell + Heart (right)
+ * Row 2: Greeting "Hi, Muskan!"
+ * Row 3: Subtitle
+ * Row 4: Search bar
  */
 export default function TopBar() {
   return (
     <View style={styles.container}>
-      {/* Left — greeting */}
-      <View style={styles.greeting}>
-        <Text style={styles.greetingMain}>Hi, Muskan!</Text>
-        <Text style={styles.greetingSub}>Find your perfect role</Text>
+      {/* ROW 1 — Logo + Icons */}
+      <View style={styles.row1}>
+        {/* LEFT — Align wordmark */}
+        <Image
+          source={require('../../../assets/images/align-logo.png')}
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
+
+        {/* RIGHT — Icons */}
+        <View style={styles.rightIcons}>
+          <TouchableOpacity activeOpacity={0.7}>
+            <View style={styles.bellWrapper}>
+              <Bell size={22} color="#0A0A0A" strokeWidth={2} />
+              <View style={styles.notifDot} />
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity activeOpacity={0.7}>
+            <Heart size={22} color="#0A0A0A" strokeWidth={2} />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Right — bell + heart */}
-      <View style={styles.rightIcons}>
-        {/* Bell with notification dot */}
-        <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
-          {/* Explicit relative wrapper so the absolute dot stays on the bell */}
-          <View style={styles.bellWrapper}>
-            <Ionicons name="notifications-outline" size={22} color="#0A0A0A" />
-            <View style={styles.notifDot} />
-          </View>
-        </TouchableOpacity>
+      {/* ROW 2 — Hi Muskan */}
+      <Text style={styles.greetingMain}>Hi, Muskan!</Text>
 
-        {/* Heart outline */}
-        <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
-          <Ionicons name="heart-outline" size={22} color="#0A0A0A" />
-        </TouchableOpacity>
+      {/* ROW 3 — Subtitle */}
+      <Text style={styles.greetingSub}>Find your perfect role</Text>
+
+      {/* ROW 4 — Search bar */}
+      <View style={styles.searchBar}>
+        <Search size={18} color="#999999" strokeWidth={2} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search roles, skills or companies"
+          placeholderTextColor="#999999"
+        />
       </View>
     </View>
   );
@@ -39,59 +57,84 @@ export default function TopBar() {
 
 const styles = StyleSheet.create({
   container: {
-    height: 64,
+    width: '100%',
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    paddingTop: 0,
+    paddingBottom: 24,
+  },
+
+  // ROW 1 — Logo + Icons row
+  row1: {
+    height: 56,
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
   },
 
-  // Left greeting
-  greeting: {
-    gap: 3,
-  },
-  greetingMain: {
-    fontSize: 26,
-    fontFamily: FontFamily.bold,
-    color: '#1A1A2E',
-  },
-  greetingSub: {
-    fontSize: 14,
-    fontFamily: FontFamily.regular,
-    color: '#6B7280',
+  // Logo image
+  logoImage: {
+    height: 28,
+    width: 100,
   },
 
-  // Right icons
+  // Right icons cluster
   rightIcons: {
     flexDirection: 'row',
-    alignItems: 'center',
     gap: 16,
-  },
-  iconBtn: {
-    width: 28,
-    height: 28,
     alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
   },
-  // Explicit relative container — guarantees absolute dot is anchored to bell
   bellWrapper: {
-    width:    22,
-    height:   22,
     position: 'relative',
+    width: 22,
+    height: 22,
   },
   notifDot: {
-    position:        'absolute',
-    top:             -2,
-    right:           -2,
-    width:           8,
-    height:          8,
-    borderRadius:    4,
-    backgroundColor: '#E63946',
-    borderWidth:     2,
-    borderColor:     '#FFFFFF',
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+
+  // ROW 2 — Greeting
+  greetingMain: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#0A0A0A',
+    marginTop: 20,
+    paddingHorizontal: 20,
+  },
+
+  // ROW 3 — Subtitle
+  greetingSub: {
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#666666',
+    marginTop: 4,
+    marginBottom: 20,
+    paddingHorizontal: 20,
+  },
+
+  // ROW 4 — Search bar
+  searchBar: {
+    height: 48,
+    backgroundColor: '#F5F5F7',
+    borderRadius: 12,
+    marginHorizontal: 20,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#0A0A0A',
+    height: '100%',
   },
 });

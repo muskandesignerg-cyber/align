@@ -249,14 +249,21 @@ export default function PostRoleSheet({ visible, onClose }: PostRoleSheetProps) 
 
   if (!visible) return null;
 
+  // ── Web: absolute overlay inside the phone frame ─────────────────────────────
+  if (Platform.OS === 'web') {
+    return (
+      <Animated.View style={[StyleSheet.absoluteFill, sheetStyle, { zIndex: 999 }]}>
+        <PostRoleProvider>
+          <PostRoleInner onClose={onClose} />
+        </PostRoleProvider>
+      </Animated.View>
+    );
+  }
+
+  // ── Native: full-screen slide-up ────────────────────────────────────────────
   return (
     <Modal transparent animationType="none" visible={visible} onRequestClose={onClose} statusBarTranslucent>
       <Animated.View style={[StyleSheet.absoluteFill, sheetStyle]}>
-        {/*
-          PostRoleProvider wraps the form state.
-          EmployerContext is already provided by EmployerNavigator → EmployerProvider,
-          so useEmployer() works inside PostRoleInner.
-        */}
         <PostRoleProvider>
           <PostRoleInner onClose={onClose} />
         </PostRoleProvider>
@@ -269,3 +276,21 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
   stepContainer: { flex: 1, overflow: 'hidden' },
 });
+
+const webStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(10,10,30,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  phoneFrame: {
+    width: 430,
+    maxHeight: 844,
+    height: '90%' as any,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+});
+

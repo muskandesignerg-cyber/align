@@ -147,14 +147,8 @@ export default function CandidateDetailSheet({
   const verifiedSkills = candidate.skills.slice(0, 2);
   const extraSkills    = candidate.skills.length > 2 ? candidate.skills.length - 2 : 0;
 
-  return (
-    <Modal
-      transparent
-      animationType="none"
-      visible={visible}
-      statusBarTranslucent
-      onRequestClose={handleClose}
-    >
+  const content = (
+    <>
       {/* Backdrop */}
       <TouchableOpacity
         style={S.backdrop}
@@ -302,6 +296,26 @@ export default function CandidateDetailSheet({
         </View>
 
       </Animated.View>
+    </>
+  );
+
+  if (Platform.OS === 'web') {
+    return (
+      <View style={[StyleSheet.absoluteFill, { zIndex: 999 }]}>
+        {content}
+      </View>
+    );
+  }
+
+  return (
+    <Modal
+      transparent
+      animationType="none"
+      visible={visible}
+      statusBarTranslucent
+      onRequestClose={handleClose}
+    >
+      {content}
     </Modal>
   );
 }

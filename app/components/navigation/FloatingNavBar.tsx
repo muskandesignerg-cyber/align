@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,84 +8,52 @@ import {
   Animated,
 } from 'react-native';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FontFamily } from '../../theme/typography';
+import { Home, LayoutGrid, MessageCircle, User } from 'lucide-react-native';
 import { useUI } from '../../context/UIContext';
 
-const ACTIVE_COLOR   = '#4C59D7';
-const INACTIVE_COLOR = '#9CA3AF';
-
-type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
-
 interface TabConfig {
-  label:    string;
-  active:   IoniconName;
-  inactive: IoniconName;
-  badge?:   boolean;
+  label: string;
+  Icon:  React.ComponentType<{ size: number; color: string; strokeWidth: number }>;
+  badge?: boolean;
 }
 
 const TAB_CONFIG: Record<string, TabConfig> = {
-  Feed: {
-    label:    'Home',
-    active:   'home',
-    inactive: 'home-outline',
-  },
-  Dashboard: {
-    label:    'Dashboard',
-    active:   'grid',
-    inactive: 'grid-outline',
-  },
-  Messages: {
-    label:    'Messages',
-    active:   'chatbubble',
-    inactive: 'chatbubble-outline',
-    badge:    true,
-  },
-  Profile: {
-    label:    'Profile',
-    active:   'person',
-    inactive: 'person-outline',
-  },
+  Feed:      { label: 'Home',      Icon: Home },
+  Dashboard: { label: 'Dashboard', Icon: LayoutGrid },
+  Messages:  { label: 'Messages',  Icon: MessageCircle, badge: true },
+  Profile:   { label: 'Profile',   Icon: User },
 };
 
 /**
- * FloatingNavBar — Custom bottom tab bar that floats 20px above
- * all screen edges. Active tab = horizontal purple pill with icon+label.
- * Inactive tabs = vertical icon+label stack.
+ * FloatingNavBar — Dark floating pill, centered 24px above screen bottom.
+ * Active tab: white pill with icon + label.
+ * Inactive tabs: icon only, rgba(255,255,255,0.6).
  */
 export default function FloatingNavBar({ state, navigation }: BottomTabBarProps) {
-  const insets       = useSafeAreaInsets();
-  const floatBottom  = insets.bottom + 16;
   const { sheetOpen } = useUI();
 
-  // Animate opacity: 1 → 0 when sheet opens, 0 → 1 when sheet closes
+  // Fade out when a bottom sheet is open
   const opacity = useRef(new Animated.Value(1)).current;
   useEffect(() => {
     Animated.timing(opacity, {
       toValue:         sheetOpen ? 0 : 1,
-      duration:        200,
+      duration:        180,
       useNativeDriver: true,
     }).start();
   }, [sheetOpen]);
 
   return (
     /**
-     * height: 0 outer wrapper is CRITICAL.
-     * React Navigation measures this component's height and subtracts it
-     * from the screen content area. Without height:0, RN measures the
-     * absolute-positioned navbar as full-screen height → screen gets 0px.
-     * With height:0, screen gets full height, navbar floats freely on top.
+     * height: 0 outer wrapper — React Navigation measures this component's
+     * height and subtracts it from screen. With height: 0, screen gets full
+     * height and the navbar floats freely via absolute positioning.
      */
     <View style={{ height: 0 }}>
       <Animated.View
-        style={[
-          styles.wrapper,
-          { bottom: floatBottom, opacity },
-          sheetOpen && { pointerEvents: 'none' } as any,
-        ]}
+        style={[styles.wrapper, { opacity }]}
+        pointerEvents={sheetOpen ? 'none' : 'box-none'}
       >
-        <View style={styles.navbar}>
+        <View style={styles.pill}>
           {state.routes.map((route, index) => {
             const isFocused = state.index === index;
             const config    = TAB_CONFIG[route.name];
@@ -106,11 +74,11 @@ export default function FloatingNavBar({ state, navigation }: BottomTabBarProps)
               return (
                 <TouchableOpacity
                   key={route.key}
-                  style={styles.activePill}
+                  style={styles.activeTab}
                   onPress={onPress}
                   activeOpacity={0.85}
                 >
-                  <Ionicons name={config.active} size={18} color="#FFFFFF" />
+                  <config.Icon size={18} color="#FFFFFF" strokeWidth={2} />
                   <Text style={styles.activeLabel}>{config.label}</Text>
                 </TouchableOpacity>
               );
@@ -119,12 +87,12 @@ export default function FloatingNavBar({ state, navigation }: BottomTabBarProps)
             return (
               <TouchableOpacity
                 key={route.key}
-                style={styles.inactiveItem}
+                style={styles.inactiveTab}
                 onPress={onPress}
                 activeOpacity={0.7}
               >
-                <View>
-                  <Ionicons name={config.inactive} size={22} color={INACTIVE_COLOR} />
+                <View style={styles.iconWrap}>
+                  <config.Icon size={20} color="#C4C4C4" strokeWidth={2} />
                   {config.badge && <View style={styles.badge} />}
                 </View>
                 <Text style={styles.inactiveLabel}>{config.label}</Text>
@@ -137,57 +105,64 @@ export default function FloatingNavBar({ state, navigation }: BottomTabBarProps)
   );
 }
 
-
 const styles = StyleSheet.create({
-  // Outer wrapper — creates 20px floating gap from all edges
+  // Transparent wrapper to position the floating navbar
   wrapper: {
-    position: 'absolute',
-    left:     20,
-    right:    20,
-    zIndex:   999,
+    position:   'absolute',
+    bottom:     0,
+    left:       0,
+    width:      '100%',
+    height:     96,
+    paddingBottom: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    backgroundColor: 'transparent',
+    zIndex:     100,
   },
 
-  // Inner floating navbar card
-  navbar: {
+  // White floating pill
+  pill: {
+    width:             358,
     height:            64,
-    backgroundColor:   '#FFFFFF',
-    borderRadius:      22,
-    borderWidth:       1,
-    borderColor:       'rgba(0,0,0,0.06)',
+    marginHorizontal:  'auto',
     flexDirection:     'row',
     alignItems:        'center',
     justifyContent:    'space-between',
-    paddingHorizontal: 12,
+    backgroundColor:   '#FFFFFF',
+    borderRadius:      22,
+    borderWidth:       1,
+    borderColor:       'rgba(0,0,0,0.07)',
+    paddingLeft:       12,
+    paddingRight:      12,
     overflow:          'hidden',
     ...Platform.select({
-      web: {
-        // @ts-ignore web-only — three-layer premium shadow
-        boxShadow: '0 4px 6px rgba(0,0,0,0.04), 0 10px 32px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.04)',
-      },
+      web: { 
+        boxShadow: '0px 2px 4px rgba(0,0,0,0.04), 0px 8px 24px rgba(0,0,0,0.10), 0px 16px 40px rgba(0,0,0,0.06)' 
+      } as any,
       default: {
         shadowColor:   '#000000',
-        shadowOffset:  { width: 0, height: 10 },
-        shadowOpacity: 0.10,
+        shadowOffset:  { width: 0, height: 16 },
+        shadowOpacity: 0.08,
         shadowRadius:  32,
-        elevation:     16,
+        elevation:     12,
       },
     }),
   },
 
-  // ── Active pill ──────────────────────────────────────────────────────────────
-  activePill: {
-    height:            42,
-    backgroundColor:   ACTIVE_COLOR,
-    borderRadius:      14,
+  // Active tab — purple filled pill inside the white bar
+  activeTab: {
     flexDirection:     'row',
     alignItems:        'center',
+    justifyContent:    'center',
     gap:               7,
-    paddingHorizontal: 18,
+    height:            42,
+    backgroundColor:   '#4F46E5',
+    borderRadius:      14,
+    paddingLeft:       16,
+    paddingRight:      16,
     ...Platform.select({
-      web: {
-        // @ts-ignore web-only
-        boxShadow: '0 4px 14px rgba(79,70,229,0.35)',
-      },
+      web: { boxShadow: '0px 4px 14px rgba(79,70,229,0.35)' } as any,
       default: {
         shadowColor:   '#4F46E5',
         shadowOffset:  { width: 0, height: 4 },
@@ -198,35 +173,49 @@ const styles = StyleSheet.create({
     }),
   },
   activeLabel: {
-    fontSize:      13,
-    fontFamily:    FontFamily.bold,
-    color:         '#FFFFFF',
-    letterSpacing: 0,
+    fontFamily: 'Inter',
+    fontSize:   13,
+    fontWeight: '700',
+    color:      '#FFFFFF',
   },
 
-  // ── Inactive item ─────────────────────────────────────────────────────────────
-  inactiveItem: {
+  // Inactive tab — icon stacked above label, both gray
+  inactiveTab: {
+    flex:              1,
     alignItems:        'center',
-    gap:                3,
-    paddingHorizontal:  8,
-    paddingVertical:    4,
+    justifyContent:    'center',
+    flexDirection:     'column',
+    gap:               3,
+    paddingTop:        4,
+    paddingBottom:     4,
+    paddingLeft:       8,
+    paddingRight:      8,
   },
   inactiveLabel: {
+    fontFamily: 'Inter',
     fontSize:   10,
-    fontFamily: FontFamily.medium,
-    color:      INACTIVE_COLOR,
+    fontWeight: '500',
+    color:      '#C4C4C4',
   },
 
-  // ── Notification badge ────────────────────────────────────────────────────────
+  iconWrap: {
+    position:       'relative',
+    width:          20,
+    height:         20,
+    alignItems:     'center',
+    justifyContent: 'center',
+  },
+
+  // Red notification dot (Messages)
   badge: {
     position:        'absolute',
     top:             -1,
     right:           -1,
-    width:            7,
-    height:           7,
-    borderRadius:     3.5,
+    width:           7,
+    height:          7,
+    borderRadius:    3.5,
     backgroundColor: '#E63946',
-    borderWidth:      1.5,
+    borderWidth:     1.5,
     borderColor:     '#FFFFFF',
   },
 });

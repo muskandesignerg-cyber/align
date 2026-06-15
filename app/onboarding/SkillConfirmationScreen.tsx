@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 4,
-    paddingBottom: 16,
+    paddingBottom: 160,
   },
 
   // ── Heading ──────────────────────────────────────────────────────────────

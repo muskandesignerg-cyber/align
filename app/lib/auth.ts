@@ -10,16 +10,16 @@ WebBrowser.maybeCompleteAuthSession();
 // On web: uses the current origin automatically (works for both localhost AND Netlify).
 // On native: uses the app's deep-link scheme.
 const getRedirectUri = (): string => {
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    // Dynamically uses whatever domain the app is running on:
-    // - http://localhost:8081  (local dev)
-    // - https://talent-logic-app.netlify.app  (production)
-    return `${window.location.origin}/auth/callback`;
-  }
-  return makeRedirectUri({
-    scheme: 'talent-logic',
-    path: 'auth/callback',
-  });
+  // Setup OAuth for web vs native
+  // On web, redirect back to current URL
+  // On native, use deep link
+  const redirectUrl = Platform.OS === 'web' 
+    ? window.location.origin
+    : makeRedirectUri({
+        scheme: 'align',
+        path: 'auth/callback'
+      });
+  return redirectUrl;
 };
 
 /**

@@ -21,8 +21,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { PipelineCandidate } from '../../types/employer';
+import { PipelineCandidate, PipelineStage } from '../../types/employer';
 import CandidateDetailSheet from '../../components/employer/candidate-detail/CandidateDetailSheet';
+import { useEmployer } from '../../context/EmployerContext';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -39,32 +40,7 @@ interface Candidate {
   match:    number;
 }
 
-// ─── Initial data ─────────────────────────────────────────────────────────────
 
-const INITIAL_NEW_MATCHES: Candidate[] = [
-  { id: 'c1', letter: 'M', avatarBg: '#1A1A2E', name: 'Muskan Sharma', role: 'UI/UX Designer · 2 yrs exp',    skills: ['Figma', 'UI Design'],    overflow: 3, match: 91 },
-  { id: 'c2', letter: 'R', avatarBg: '#0F4C75', name: 'Riya Mehta',    role: 'Product Designer · 3 yrs exp', skills: ['Figma', 'Prototyping'],   overflow: 2, match: 87 },
-  { id: 'c3', letter: 'A', avatarBg: '#134E4A', name: 'Arjun Kapoor',  role: 'UX Researcher · 1 yr exp',     skills: ['User Research', 'Sketch'], overflow: 1, match: 78 },
-  { id: 'c4', letter: 'P', avatarBg: '#3B1F5E', name: 'Priya Nair',    role: 'Visual Designer · 4 yrs exp',  skills: ['Adobe XD', 'Branding'],   overflow: 4, match: 82 },
-];
-
-const INITIAL_TESTING: Candidate[] = [
-  { id: 't1', letter: 'S', avatarBg: '#0F4C75', name: 'Sneha Patel', role: 'UI Designer · 2 yrs exp',        skills: ['Figma', 'Sketch'],       overflow: 2, match: 85 },
-  { id: 't2', letter: 'K', avatarBg: '#134E4A', name: 'Karan Singh', role: 'Product Designer · 3 yrs exp',   skills: ['Adobe XD', 'UI Design'], overflow: 1, match: 79 },
-];
-
-const TESTING_STATUS: Record<string, string> = {
-  t1: 'Assessment sent · 1 day ago',
-  t2: 'Assessment sent · 3 hrs ago',
-};
-
-const INTERVIEW: Candidate[] = [
-  { id: 'i1', letter: 'D', avatarBg: '#3B1F5E', name: 'Divya Rao',    role: 'Senior UX Designer · 4 yrs exp', skills: ['Figma', 'Research'],   overflow: 3, match: 93 },
-];
-
-const HIRED: Candidate[] = [
-  { id: 'h1', letter: 'V', avatarBg: '#1A1A2E', name: 'Vikram Joshi', role: 'UI/UX Designer · 3 yrs exp',     skills: ['Figma', 'Prototyping'], overflow: 4, match: 96 },
-];
 
 // ─── Tab config ────────────────────────────────────────────────────────────────
 
@@ -75,10 +51,15 @@ const TAB_LABELS: Record<TabKey, string> = {
   hired:      'Hired',
 };
 
-// ─── Candidate Card ────────────────────────────────────────────────────────────
+function avatarColor(id: string): string {
+  const COLORS = ['#1A1A2E', '#0F4C75', '#134E4A', '#4C59D7', '#6D28D9', '#065F46'];
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  return COLORS[Math.abs(hash) % COLORS.length];
+}
 
 interface CardProps {
-  c: Candidate;
+  c: PipelineCandidate;
   statusStrip?:   React.ReactNode;
   actionLeft:     { icon: keyof typeof Ionicons.glyphMap; label: string; onPress?: () => void; moving?: boolean };
   actionRight:    { icon: keyof typeof Ionicons.glyphMap; label: string; color?: string; bg?: string; border?: string; onPress?: () => void };
@@ -87,17 +68,21 @@ interface CardProps {
 
 function CandidateCard({ c, statusStrip, actionLeft, actionRight, movingId }: CardProps) {
   const moving = movingId === c.id;
+  const initial = c.candidateName ? c.candidateName[0].toUpperCase() : '?';
+  const bg = avatarColor(c.candidateId);
+  const visibleSkills = c.skills.slice(0, 3);
+  const overflow = c.skills.length > 3 ? c.skills.length - 3 : 0;
 
   return (
     <View style={[card.wrap, moving && card.wrapMoving]}>
       {/* Row 1 — avatar + info + menu */}
       <View style={card.row1}>
-        <View style={[card.avatar, { backgroundColor: c.avatarBg }]}>
-          <Text style={card.avatarLetter}>{c.letter}</Text>
+        <View style={[card.avatar, { backgroundColor: bg }]}>
+          <Text style={card.avatarLetter}>{initial}</Text>
         </View>
         <View style={card.info}>
-          <Text style={card.name}>{c.name}</Text>
-          <Text style={card.role}>{c.role}</Text>
+          <Text style={card.name}>{c.candidateName}</Text>
+          <Text style={card.role}>{c.candidateTitle}</Text>
         </View>
         <TouchableOpacity activeOpacity={0.7} style={card.menuBtn}>
           <Ionicons name="ellipsis-vertical-outline" size={18} color="#CCCCCC" />
@@ -107,20 +92,20 @@ function CandidateCard({ c, statusStrip, actionLeft, actionRight, movingId }: Ca
       {/* Row 2 — skills + match */}
       <View style={card.row2}>
         <View style={card.skillsRow}>
-          {c.skills.map((s) => (
+          {visibleSkills.map((s) => (
             <View key={s} style={card.chip}>
               <Text style={card.chipText}>{s}</Text>
             </View>
           ))}
-          {c.overflow > 0 && (
+          {overflow > 0 && (
             <View style={card.overflowChip}>
-              <Text style={card.overflowText}>+{c.overflow}</Text>
+              <Text style={card.overflowText}>+{overflow}</Text>
             </View>
           )}
         </View>
         <View style={card.matchBadge}>
           <Ionicons name="star" size={11} color="#4F46E5" />
-          <Text style={card.matchText}>{c.match}% Match</Text>
+          <Text style={card.matchText}>{c.matchScore}% Match</Text>
         </View>
       </View>
 
@@ -181,36 +166,51 @@ const strip = StyleSheet.create({
   text: { fontSize: 12, fontWeight: '500' },
 });
 
+import { getOrCreateConversation } from '../../lib/database';
+import { useAuth } from '../../context/AuthContext';
+import ChatScreen from '../ChatScreen';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { EmployerStackParamList } from '../../navigation/EmployerNavigator';
+
 // ─── Main Screen ───────────────────────────────────────────────────────────────
 
 export default function CandidatesScreen() {
+  const { user } = useAuth();
+  const { allCandidates, moveCandidate } = useEmployer();
+  const navigation = useNavigation<NativeStackNavigationProp<EmployerStackParamList>>();
+
   const [activeTab, setActiveTab] = useState<TabKey>('newMatches');
-  const [newMatches, setNewMatches] = useState<Candidate[]>(INITIAL_NEW_MATCHES);
-  const [testing,    setTesting]    = useState<Candidate[]>(INITIAL_TESTING);
   const [movingId,   setMovingId]   = useState<string | null>(null);
   const [selectedCandidate, setSelectedCandidate] = useState<PipelineCandidate | null>(null);
   const [detailVisible,     setDetailVisible]     = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
-  // Convert local Candidate → PipelineCandidate for the detail sheet
-  const toPipelineCandidate = (c: Candidate): PipelineCandidate => ({
-    id:                  c.id,
-    jobId:               'pipeline-job',
-    candidateId:         c.id,
-    candidateName:       c.name,
-    candidateTitle:      c.role,
-    skills:              [...c.skills, ...(c.overflow > 0 ? [`+${c.overflow} more`] : [])],
-    matchScore:          c.match,
-    stage:               'new_matches',
-    hasAssessment:       false,
-    hasVideoPitch:       false,
-    appliedAt:           new Date().toISOString(),
-    isVerified:          true,
-  });
+  // Chat State
+  const [chatOpen, setChatOpen] = useState(false);
+  const [activeConvId, setActiveConvId] = useState<string | null>(null);
+  const [chatCandidate, setChatCandidate] = useState<PipelineCandidate | null>(null);
 
-  const openDetail = (c: Candidate) => {
-    setSelectedCandidate(toPipelineCandidate(c));
+  const newMatches = allCandidates.filter(c => c.stage === 'new_matches');
+  const testing = allCandidates.filter(c => c.stage === 'testing');
+  const interview = allCandidates.filter(c => c.stage === 'interview');
+  const hired = allCandidates.filter(c => c.stage === 'hired');
+
+  const openDetail = (c: PipelineCandidate) => {
+    setSelectedCandidate(c);
     setDetailVisible(true);
+  };
+
+  const handleMessage = async (c: PipelineCandidate) => {
+    if (!user) return;
+    try {
+      const conv = await getOrCreateConversation(user.id, c.candidateId, c.jobId);
+      setActiveConvId(conv.id);
+      setChatCandidate(c);
+      setChatOpen(true);
+    } catch (e) {
+      console.error('[Candidates] Failed to open chat:', e);
+    }
   };
 
   // Fade transition on tab switch
@@ -221,22 +221,38 @@ export default function CandidatesScreen() {
     });
   };
 
-  // Move candidate from New Matches → Testing
-  const moveToTesting = (c: Candidate) => {
-    setMovingId(c.id);
-    setTimeout(() => {
-      setNewMatches((prev) => prev.filter((x) => x.id !== c.id));
-      setTesting((prev) => [{ ...c, id: 'moved-' + c.id }, ...prev]);
-      setMovingId(null);
-    }, 350);
+  // Move candidate from New Matches → open AssessmentBuilder
+  const moveToTesting = (c: PipelineCandidate) => {
+    // Build a minimal JobPosting from the candidate's job context
+    const job = {
+      id:             c.jobId,
+      employerId:     user?.id ?? '',
+      roleTitle:      c.candidateTitle || 'Software Engineer',
+      companyName:    'Your Company',
+      employmentType: 'Full-time',
+      workModel:      'Remote',
+      location:       'Remote',
+      salaryMin:      0,
+      salaryMax:      0,
+      currency:       'USD',
+      skills:         c.skills,
+      description:    '',
+      isActive:       true,
+      requiresAssessment: true,
+      blindAudition:  false,
+      candidateCount: 1,
+      postedAt:       new Date().toISOString(),
+    };
+    navigation.navigate('AssessmentBuilder', { candidate: c, job });
+    // Stage update happens after employer sends the assessment
   };
 
   // Dynamic tab counts
   const TABS: { key: TabKey; label: string; count: number }[] = [
     { key: 'newMatches', label: 'New Matches', count: newMatches.length },
     { key: 'testing',    label: 'Testing',     count: testing.length },
-    { key: 'interview',  label: 'Interview',   count: INTERVIEW.length },
-    { key: 'hired',      label: 'Hired',       count: HIRED.length },
+    { key: 'interview',  label: 'Interview',   count: interview.length },
+    { key: 'hired',      label: 'Hired',       count: hired.length },
   ];
 
   // Section header config per tab
@@ -257,8 +273,12 @@ export default function CandidatesScreen() {
           key={c.id}
           c={c}
           movingId={movingId ?? undefined}
-          actionLeft={{ icon: 'flask-outline', label: 'Move to Testing', onPress: () => moveToTesting(c) }}
-          actionRight={{ icon: 'person-outline', label: 'View Profile', onPress: () => openDetail(c) }}
+          actionLeft={{ icon: 'chatbubble-outline', label: 'Message', onPress: () => handleMessage(c) }}
+          actionRight={{
+            icon: 'flask-outline',
+            label: 'Send Assessment',
+            onPress: () => moveToTesting(c),
+          }}
         />
       ));
     }
@@ -271,47 +291,47 @@ export default function CandidatesScreen() {
           statusStrip={
             <StatusStrip
               icon="flask-outline"
-              text={TESTING_STATUS[c.id] ?? 'Assessment sent'}
+              text={c.hasAssessment ? 'Assessment sent' : 'Assessment pending'}
               bg="#FFF7ED" border="#FED7AA" color="#F59E0B"
             />
           }
-          actionLeft={{ icon: 'time-outline', label: 'Awaiting Results' }}
+          actionLeft={{ icon: 'chatbubble-outline', label: 'Message', onPress: () => handleMessage(c) }}
           actionRight={{ icon: 'person-outline', label: 'View Profile', onPress: () => openDetail(c) }}
         />
       ));
     }
 
     if (activeTab === 'interview') {
-      return INTERVIEW.map((c) => (
+      return interview.map((c) => (
         <CandidateCard
           key={c.id}
           c={c}
           statusStrip={
             <StatusStrip
               icon="videocam-outline"
-              text="Interview scheduled · Tomorrow 3:00 PM"
+              text="Interview scheduled"
               bg="#F0FDF4" border="#BBF7D0" color="#22C55E"
             />
           }
-          actionLeft={{ icon: 'calendar-outline', label: 'Reschedule' }}
-          actionRight={{ icon: 'checkmark-circle-outline', label: 'Move to Hired', onPress: () => openDetail(c) }}
+          actionLeft={{ icon: 'chatbubble-outline', label: 'Message', onPress: () => handleMessage(c) }}
+          actionRight={{ icon: 'checkmark-circle-outline', label: 'Move to Hired', onPress: () => moveCandidate(c.id, 'interview', 'hired') }}
         />
       ));
     }
 
     if (activeTab === 'hired') {
-      return HIRED.map((c) => (
+      return hired.map((c) => (
         <CandidateCard
           key={c.id}
           c={c}
           statusStrip={
             <StatusStrip
               icon="ribbon-outline"
-              text="Offer accepted · Joining 1st Feb"
+              text="Offer accepted"
               bg="#EEF2FF" border="#C7D2FE" color="#4F46E5"
             />
           }
-          actionLeft={{ icon: 'mail-outline', label: 'Send Onboarding' }}
+          actionLeft={{ icon: 'chatbubble-outline', label: 'Message', onPress: () => handleMessage(c) }}
           actionRight={{ icon: 'document-text-outline', label: 'View Contract', onPress: () => openDetail(c) }}
         />
       ));
@@ -350,7 +370,7 @@ export default function CandidatesScreen() {
             <Text style={S.statLabel}>Testing</Text>
           </View>
           <View style={S.statCard}>
-            <Text style={[S.statNum, { color: '#22C55E' }]}>{INTERVIEW.length}</Text>
+            <Text style={[S.statNum, { color: '#22C55E' }]}>{interview.length}</Text>
             <Text style={S.statLabel}>Interviews</Text>
           </View>
         </View>
@@ -406,6 +426,16 @@ export default function CandidatesScreen() {
         onSendAssessment={() => setDetailVisible(false)}
         onPass={() => setDetailVisible(false)}
       />
+
+      {/* ── CHAT OVERLAY ────────────────────────────── */}
+      <ChatScreen
+        visible={chatOpen}
+        conversationId={activeConvId}
+        currentUserId={user?.id ?? ''}
+        otherUserName={chatCandidate?.candidateName ?? 'Candidate'}
+        jobTitle={chatCandidate?.jobId === 'pipeline-job' ? undefined : chatCandidate?.jobId}
+        onClose={() => { setChatOpen(false); setActiveConvId(null); setChatCandidate(null); }}
+      />
     </SafeAreaView>
   );
 }
@@ -455,7 +485,7 @@ const card = StyleSheet.create({
 const S = StyleSheet.create({
   root:    { flex: 1, backgroundColor: '#FFFFFF' },
   scroll:  { flex: 1 },
-  content: { paddingBottom: 110 },
+  content: { paddingBottom: 160 },
 
   header: {
     height: 64, flexDirection: 'row', alignItems: 'center',

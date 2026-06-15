@@ -1,454 +1,317 @@
 /**
- * MessagesScreen — Full chat list redesign.
+ * MessagesScreen — Candidate's real conversation threads.
  *
- * Features:
- *  • Header: "Messages" + compose icon
- *  • Search bar
- *  • Filter chips (All / Unread / Employers / Archived)
- *  • 5 realistic conversations with job context tags
- *  • Unread indicators (bold text + badge count)
- *  • Online dot on active company
+ * Fetches conversations from Supabase where candidate_id = current user.
+ * Opens ChatScreen modal on tap.
+ * Real-time: updates preview when employer sends a new message.
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  StatusBar,
+  TextInput,
   ScrollView,
   TouchableOpacity,
-  TextInput,
-  Animated,
+  StatusBar,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-
-// ─── Data ─────────────────────────────────────────────────────────────────────
-
-interface Chat {
-  id: string;
-  initial: string;
-  avatarBg: string;
-  company: string;
-  timestamp: string;
-  jobTag: string;
-  preview: string;
-  unread: number;
-  online: boolean;
-  sentByMe?: boolean;
-}
-
-const CHATS: Chat[] = [
-  {
-    id: '1',
-    initial: 'E',
-    avatarBg: '#1A1A2E',
-    company: 'Exposys Data Labs',
-    timestamp: '2m ago',
-    jobTag: 'UI/UX Designer',
-    preview: 'Hi Muskan! We reviewed your profile and would love to schedule a quick...',
-    unread: 2,
-    online: true,
-  },
-  {
-    id: '2',
-    initial: 'L',
-    avatarBg: '#0F4C75',
-    company: 'Luminary Health',
-    timestamp: '1h ago',
-    jobTag: 'Mobile Engineer',
-    preview: 'Your assessment results were impressive! Can you join us for a video call on...',
-    unread: 1,
-    online: false,
-  },
-  {
-    id: '3',
-    initial: 'N',
-    avatarBg: '#1A1A2E',
-    company: 'NovaTech Industries',
-    timestamp: 'Yesterday',
-    jobTag: 'Product Manager',
-    preview: 'Thank you for your interest. We will be in touch shortly with next steps.',
-    unread: 0,
-    online: false,
-  },
-  {
-    id: '4',
-    initial: 'T',
-    avatarBg: '#134E4A',
-    company: 'TechFlow Inc.',
-    timestamp: '2 days ago',
-    jobTag: 'Senior Product Designer',
-    preview: 'Thanks for considering me! Looking forward to hearing back.',
-    unread: 0,
-    online: false,
-    sentByMe: true,
-  },
-  {
-    id: '5',
-    initial: 'G',
-    avatarBg: '#3B1F5E',
-    company: 'GrowthBase',
-    timestamp: '3 days ago',
-    jobTag: 'UX Researcher',
-    preview: 'Unfortunately, we have moved forward with other candidates at this time.',
-    unread: 0,
-    online: false,
-  },
-];
+import { useAuth } from '../context/AuthContext';
+import { getConversations, ConversationRow } from '../lib/database';
+import { supabase } from '../lib/supabase';
+import ChatScreen from './ChatScreen';
 
 const FILTERS = ['All', 'Unread', 'Employers', 'Archived'];
 
-// ─── Chat Row ─────────────────────────────────────────────────────────────────
+function getInitials(name: string) {
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map((n) => n[0]?.toUpperCase() ?? '')
+    .join('');
+}
 
-function ChatRow({ chat }: { chat: Chat }) {
-  const isUnread = chat.unread > 0;
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days === 1) return 'Yesterday';
+  return `${days}d ago`;
+}
+
+// ─── Avatar colors ────────────────────────────────────────────────────────────
+
+const AVATAR_COLORS = ['#1A1A2E', '#0F4C75', '#134E4A', '#4C59D7', '#6D28D9', '#065F46'];
+function avatarColor(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+// ─── Thread row ───────────────────────────────────────────────────────────────
+
+function ThreadRow({
+  conv,
+  onPress,
+}: {
+  conv: ConversationRow;
+  onPress: () => void;
+}) {
+  const employerName = conv.employer?.full_name ?? 'Employer';
+  const jobTitle = conv.job?.role_title ?? '';
+  const preview = conv.last_message || 'No messages yet';
+  const timestamp = timeAgo(conv.last_message_at);
+  const bg = avatarColor(conv.employer_id);
 
   return (
-    <TouchableOpacity
-      style={[styles.chatRow, isUnread && styles.chatRowUnread]}
-      activeOpacity={0.7}
-    >
+    <TouchableOpacity style={styles.thread} onPress={onPress} activeOpacity={0.85}>
       {/* Avatar */}
-      <View style={styles.avatarWrap}>
-        <View style={[styles.avatar, { backgroundColor: chat.avatarBg }]}>
-          <Text style={styles.avatarLetter}>{chat.initial}</Text>
-        </View>
-        {chat.online && <View style={styles.onlineDot} />}
+      <View style={[styles.avatar, { backgroundColor: bg }]}>
+        <Text style={styles.avatarText}>{getInitials(employerName)}</Text>
       </View>
 
-      {/* Content */}
-      <View style={styles.chatContent}>
-        {/* Row 1 — company + timestamp */}
-        <View style={styles.chatTopRow}>
-          <Text
-            style={[
-              styles.companyName,
-              isUnread && styles.companyNameUnread,
-            ]}
-            numberOfLines={1}
-          >
-            {chat.company}
-          </Text>
-          <Text style={styles.timestamp}>{chat.timestamp}</Text>
+      {/* Body */}
+      <View style={styles.threadBody}>
+        <View style={styles.threadTop}>
+          <Text style={styles.threadName} numberOfLines={1}>{employerName}</Text>
+          <Text style={styles.threadTime}>{timestamp}</Text>
         </View>
-
-        {/* Row 2 — preview + badge */}
-        <View style={styles.previewRow}>
-          <Text
-            style={[
-              styles.preview,
-              isUnread && styles.previewUnread,
-            ]}
-            numberOfLines={1}
-          >
-            {chat.sentByMe ? (
-              <Text style={styles.youPrefix}>You: </Text>
-            ) : null}
-            {chat.preview}
-          </Text>
-          {isUnread && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{chat.unread}</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Row 3 — job context tag */}
-        <View style={styles.tagWrap}>
-          <Text style={styles.jobTag}>Re: {chat.jobTag}</Text>
-        </View>
+        {jobTitle ? (
+          <View style={styles.jobTagWrap}>
+            <Text style={styles.jobTag} numberOfLines={1}>{jobTitle}</Text>
+          </View>
+        ) : null}
+        <Text style={styles.preview} numberOfLines={1}>{preview}</Text>
       </View>
+
+      <Ionicons name="chevron-forward" size={16} color="#D0D7FF" />
     </TouchableOpacity>
   );
 }
 
-// ─── Main Screen ──────────────────────────────────────────────────────────────
+// ─── Main screen ──────────────────────────────────────────────────────────────
 
-export const MessagesScreen: React.FC = () => {
-  const [activeFilter, setActiveFilter] = useState('all');
+export function MessagesScreen() {
+  const { user } = useAuth();
   const [search, setSearch] = useState('');
-  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const [activeFilter, setActiveFilter] = useState('All');
+  const [conversations, setConversations] = useState<ConversationRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Fade out → update → fade in when filter changes
-  const handleFilterChange = (filter: string) => {
-    Animated.timing(fadeAnim, {
-      toValue: 0,
-      duration: 120,
-      useNativeDriver: true,
-    }).start(() => {
-      setActiveFilter(filter);
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 150,
-        useNativeDriver: true,
-      }).start();
-    });
+  // Chat modal state
+  const [chatOpen, setChatOpen] = useState(false);
+  const [selectedConv, setSelectedConv] = useState<ConversationRow | null>(null);
+
+  // ── Load conversations ───────────────────────────────────────────────────
+  const load = useCallback(async () => {
+    if (!user) return;
+    const data = await getConversations(user.id);
+    setConversations(data);
+    setLoading(false);
+    setRefreshing(false);
+  }, [user]);
+
+  useEffect(() => { load(); }, [load]);
+
+  // ── Real-time: refresh when conversations change ─────────────────────────
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel('candidate-convs')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'conversations',
+        filter: `candidate_id=eq.${user.id}`,
+      }, () => { load(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user, load]);
+
+  const filtered = conversations.filter((c) =>
+    (c.employer?.full_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
+    (c.job?.role_title ?? '').toLowerCase().includes(search.toLowerCase())
+  );
+
+  const openChat = (conv: ConversationRow) => {
+    setSelectedConv(conv);
+    setChatOpen(true);
   };
 
-  // Derive visible chats based on active filter
-  const visibleChats = (() => {
-    switch (activeFilter) {
-      case 'unread':
-        return CHATS.filter((c) => c.unread > 0);
-      case 'archived':
-        return []; // no archived chats
-      default: // 'all' | 'employers'
-        return CHATS;
-    }
-  })();
-
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* ── Header ── */}
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Messages</Text>
-        <TouchableOpacity activeOpacity={0.7}>
-          <Ionicons name="create-outline" size={24} color="#4F46E5" />
-        </TouchableOpacity>
       </View>
 
-      {/* ── Search ── */}
-      <View style={styles.searchWrap}>
-        <View style={styles.searchBar}>
-          <Ionicons name="search-outline" size={16} color="#AAAAAA" />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => { setRefreshing(true); load(); }}
+            tintColor="#4C59D7"
+          />
+        }
+      >
+        {/* Search */}
+        <View style={styles.searchBox}>
+          <Ionicons name="search" size={16} color="#9CA3AF" style={{ marginRight: 8 }} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search conversations..."
-            placeholderTextColor="#AAAAAA"
             value={search}
             onChangeText={setSearch}
+            placeholder="Search messages..."
+            placeholderTextColor="#9CA3AF"
           />
         </View>
-      </View>
 
-      {/* ── Filter chips ── */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filtersRow}
-        style={styles.filtersScroll}
-      >
-        {FILTERS.map((f) => {
-          const key = f.toLowerCase();
-          const isActive = key === activeFilter;
-          return (
-            <TouchableOpacity
-              key={f}
-              style={[styles.chip, isActive && styles.chipActive]}
-              onPress={() => handleFilterChange(key)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
-                {f}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+        {/* Filter chips */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+          {FILTERS.map((f) => {
+            const active = activeFilter === f;
+            return (
+              <TouchableOpacity
+                key={f}
+                style={[styles.filterChip, active ? styles.filterActive : styles.filterInactive]}
+                onPress={() => setActiveFilter(f)}
+                activeOpacity={0.75}
+              >
+                <Text style={[styles.filterText, active ? styles.filterTextActive : styles.filterTextInactive]}>{f}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
 
-      {/* ── Chat list / empty state (fades on filter change) ── */}
-      <Animated.View style={[{ flex: 1 }, { opacity: fadeAnim }]}>
-        {activeFilter === 'archived' ? (
-          /* Archived empty state */
-          <View style={styles.emptyWrap}>
-            <View style={styles.emptyIconBox}>
-              <Ionicons name="archive-outline" size={28} color="#AAAAAA" />
-            </View>
-            <Text style={styles.emptyTitle}>No archived conversations</Text>
-            <Text style={styles.emptySub}>Conversations you archive</Text>
-            <Text style={styles.emptySub}>will appear here.</Text>
+        {/* Thread list */}
+        {loading ? (
+          <ActivityIndicator color="#4C59D7" style={{ marginTop: 40 }} />
+        ) : filtered.length === 0 ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyIcon}>💬</Text>
+            <Text style={styles.emptyTitle}>No messages yet</Text>
+            <Text style={styles.emptySub}>
+              When employers reach out, their messages will appear here.
+            </Text>
           </View>
         ) : (
-          <ScrollView
-            style={styles.list}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-          >
-            {visibleChats.map((chat) => (
-              <ChatRow key={chat.id} chat={chat} />
+          <View style={styles.threadList}>
+            {filtered.map((conv) => (
+              <ThreadRow
+                key={conv.id}
+                conv={conv}
+                onPress={() => openChat(conv)}
+              />
             ))}
-          </ScrollView>
+          </View>
         )}
-      </Animated.View>
+      </ScrollView>
+
+      {/* Chat modal */}
+      <ChatScreen
+        visible={chatOpen}
+        conversationId={selectedConv?.id ?? null}
+        currentUserId={user?.id ?? ''}
+        otherUserName={selectedConv?.employer?.full_name ?? 'Employer'}
+        jobTitle={selectedConv?.job?.role_title}
+        onClose={() => { setChatOpen(false); setSelectedConv(null); load(); }}
+      />
     </SafeAreaView>
   );
-};
+}
+
+export default MessagesScreen;
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
-
-  // Header
+  safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
   header: {
-    height: 64,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-    backgroundColor: '#FFFFFF',
+    paddingTop: 12,
+    paddingBottom: 4,
   },
-  headerTitle: { fontSize: 22, fontWeight: '700', color: '#0A0A0A' },
+  headerTitle: {
+    fontSize: 28,
+    fontFamily: 'PlusJakartaSans_800ExtraBold',
+    color: '#1A1A2E',
+  },
+  content: { paddingHorizontal: 20, paddingBottom: 160 },
 
-  // Search
-  searchWrap: { paddingHorizontal: 20, paddingVertical: 12, backgroundColor: '#FFFFFF' },
-  searchBar: {
-    height: 42,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#F7F7F7',
-    borderWidth: 1,
-    borderColor: '#EBEBEB',
-    borderRadius: 12,
-    paddingHorizontal: 14,
+  searchBox: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#F8F9FF', borderRadius: 12,
+    borderWidth: 1, borderColor: '#E5E7EB',
+    paddingHorizontal: 14, height: 46,
+    marginTop: 16, marginBottom: 14,
   },
   searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: '#0A0A0A',
-    paddingVertical: 0,
+    flex: 1, fontSize: 14,
+    fontFamily: 'PlusJakartaSans_400Regular', color: '#1A1A2E',
   },
 
-  // Filters
-  filtersScroll: { maxHeight: 44, backgroundColor: '#FFFFFF' },
-  filtersRow: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-    alignItems: 'center',
-  },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: '#F7F7F7',
-    borderWidth: 1,
-    borderColor: '#EBEBEB',
-  },
-  chipActive: {
-    backgroundColor: '#4F46E5',
-    borderColor: '#4F46E5',
-  },
-  chipText:       { fontSize: 12, fontWeight: '500', color: '#555555' },
-  chipTextActive: { color: '#FFFFFF', fontWeight: '600' },
+  filterRow: { gap: 8, paddingBottom: 16 },
+  filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
+  filterActive:   { backgroundColor: '#4C59D7', borderColor: '#4C59D7' },
+  filterInactive: { backgroundColor: '#FFFFFF', borderColor: '#E5E7EB' },
+  filterText: { fontSize: 13, fontFamily: 'PlusJakartaSans_600SemiBold' },
+  filterTextActive:   { color: '#FFFFFF' },
+  filterTextInactive: { color: '#6B7280' },
 
-  // List
-  list:        { flex: 1 },
-  listContent: { paddingHorizontal: 20, paddingBottom: 100 },
-
-  // Chat row
-  chatRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  threadList: { gap: 2 },
+  thread: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 14, paddingHorizontal: 4,
+    borderBottomWidth: 1, borderBottomColor: '#F0F2FF',
     gap: 12,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F5F5F5',
-    backgroundColor: '#FFFFFF',
   },
-  chatRowUnread: { backgroundColor: '#FAFAFE' },
-
-  // Avatar
-  avatarWrap: { position: 'relative' },
   avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 50, height: 50, borderRadius: 25,
+    alignItems: 'center', justifyContent: 'center',
   },
-  avatarLetter: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
-  onlineDot: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 11,
-    height: 11,
-    borderRadius: 5.5,
-    backgroundColor: '#22C55E',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
+  avatarText: { fontSize: 17, fontFamily: 'PlusJakartaSans_700Bold', color: '#FFFFFF' },
+  threadBody: { flex: 1 },
+  threadTop: {
+    flexDirection: 'row', justifyContent: 'space-between',
+    alignItems: 'center', marginBottom: 3,
   },
-
-  // Content
-  chatContent: { flex: 1, gap: 4 },
-  chatTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  threadName: {
+    fontSize: 15, fontFamily: 'PlusJakartaSans_700Bold',
+    color: '#1A1A2E', flex: 1, marginRight: 8,
   },
-  companyName:       { fontSize: 14, fontWeight: '600', color: '#0A0A0A', flex: 1, marginRight: 8 },
-  companyNameUnread: { fontWeight: '700' },
-  timestamp:         { fontSize: 11, color: '#AAAAAA' },
-
-  previewRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  preview:       { fontSize: 13, color: '#888888', flex: 1, marginRight: 8 },
-  previewUnread: { color: '#333333', fontWeight: '500' },
-  youPrefix:     { color: '#AAAAAA' },
-
-  badge: {
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: '#4F46E5',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
-  },
-  badgeText: { fontSize: 10, fontWeight: '700', color: '#FFFFFF' },
-
-  tagWrap: { alignSelf: 'flex-start' },
-  jobTag: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: '#4F46E5',
-    backgroundColor: '#EEF2FF',
-    borderRadius: 999,
+  threadTime: { fontSize: 12, fontFamily: 'PlusJakartaSans_400Regular', color: '#9CA3AF' },
+  jobTagWrap: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#EEF0FF',
+    borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 2,
-    overflow: 'hidden',
+    marginBottom: 4,
   },
+  jobTag: { fontSize: 11, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#4C59D7' },
+  preview: { fontSize: 13, fontFamily: 'PlusJakartaSans_400Regular', color: '#6B7280' },
 
-  // Archived empty state
-  emptyWrap: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 40,
-    paddingBottom: 80,
-  },
-  emptyIconBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 18,
-    backgroundColor: '#F7F7F7',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
+  empty:      { alignItems: 'center', paddingTop: 60, paddingHorizontal: 32 },
+  emptyIcon:  { fontSize: 48, marginBottom: 16 },
   emptyTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#0A0A0A',
-    textAlign: 'center',
+    fontSize: 18, fontFamily: 'PlusJakartaSans_700Bold',
+    color: '#1A1A2E', marginBottom: 8, textAlign: 'center',
   },
   emptySub: {
-    fontSize: 13,
-    color: '#888888',
-    textAlign: 'center',
-    marginTop: 6,
-    lineHeight: 20,
+    fontSize: 14, fontFamily: 'PlusJakartaSans_400Regular',
+    color: '#6B7280', textAlign: 'center', lineHeight: 20,
   },
 });

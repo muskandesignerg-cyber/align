@@ -22,6 +22,7 @@ import {
   Platform,
   Alert,
   Animated,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -231,13 +232,15 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
           opacity: logoOpacity,
           transform: [{ translateY: logoY }],
         }]}>
-          {/* Logo card */}
-          <View style={[s.logoCard, cardShadow]}>
-            <LightningBolt />
-          </View>
-
           {/* App name */}
-          <Text style={s.wordmark}>TALENT.LOGIC</Text>
+          <Image
+            source={require('../../assets/images/align-logo.png')}
+            style={{
+              width: 160,
+              height: 52,
+              resizeMode: 'contain',
+            }}
+          />
         </Animated.View>
 
         {/* Tagline fades in separately */}
@@ -362,8 +365,10 @@ const s = StyleSheet.create({
   logoSection: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingHorizontal: 24,
+    marginTop: 80,
+    marginBottom: 60,
   },
   logoCardWrap: {
     alignItems: 'center',

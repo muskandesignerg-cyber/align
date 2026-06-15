@@ -14,6 +14,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -86,13 +87,14 @@ export default function AppTopBar({
 
         {/* ── CENTER: Wordmark — absolutely positioned so it never shifts ── */}
         <View style={styles.wordmarkWrap} pointerEvents="none">
-          <Ionicons
-            name="flash"
-            size={13}
-            color="#4C59D7"
-            style={{ marginRight: 5, marginTop: 1 }}
+          <Image
+            source={require('../../../assets/images/align-logo.png')}
+            style={{
+              width: 90,
+              height: 28,
+              resizeMode: 'contain',
+            }}
           />
-          <Text style={styles.wordmark}>TALENT.LOGIC</Text>
         </View>
 
         {/* ── RIGHT: Bell ── */}

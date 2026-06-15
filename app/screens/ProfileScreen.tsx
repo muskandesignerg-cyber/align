@@ -564,7 +564,7 @@ const S = StyleSheet.create({
 
   // Scroll
   scroll:        { flex: 1 },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 120 },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 160 },
 
   // Hero
   hero:       { alignItems: 'center', marginBottom: 24 },

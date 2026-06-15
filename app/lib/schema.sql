@@ -1,5 +1,5 @@
 -- ================================================================
---  TALENT.LOGIC — SUPABASE SCHEMA v6
+--  Align — SUPABASE SCHEMA v6
 --
 --  ✅ Safe to run on a COMPLETELY EMPTY Supabase project
 --  ✅ Safe to re-run (fully idempotent — no errors, no duplicates)
@@ -517,7 +517,7 @@ order by tbl;
 
 
 -- ================================================================
--- ✅  TALENT.LOGIC SCHEMA v6 — COMPLETE
+-- ✅  Align SCHEMA v6 — COMPLETE
 --
 --  TABLES (7 total):
 --    ✓ profiles                — shared: candidates + employers

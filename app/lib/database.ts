@@ -517,3 +517,147 @@ export const getCandidateProfileJson = async (
   if (error) return null;
   return data?.profile_json ?? null;
 };
+
+// ─── Messaging ────────────────────────────────────────────────────────────────
+
+export interface ConversationRow {
+  id: string;
+  employer_id: string;
+  candidate_id: string;
+  job_id: string | null;
+  last_message: string;
+  last_message_at: string;
+  created_at: string;
+  employer?: { full_name: string; avatar_url: string | null };
+  candidate?: { full_name: string; avatar_url: string | null };
+  job?: { role_title: string } | null;
+}
+
+export interface MessageRow {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  content: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+/**
+ * Fetch all conversations for a user (as employer OR candidate).
+ * Joins the other party's profile + job title.
+ */
+export const getConversations = async (
+  userId: string
+): Promise<ConversationRow[]> => {
+  const { data, error } = await supabase
+    .from('conversations')
+    .select(`
+      *,
+      employer:profiles!conversations_employer_id_fkey(full_name, avatar_url),
+      candidate:profiles!conversations_candidate_id_fkey(full_name, avatar_url),
+      job:job_postings(role_title)
+    `)
+    .or(`employer_id.eq.${userId},candidate_id.eq.${userId}`)
+    .order('last_message_at', { ascending: false });
+
+  if (error) {
+    console.warn('[DB] getConversations error:', error.message);
+    return [];
+  }
+  return (data ?? []) as ConversationRow[];
+};
+
+/**
+ * Get or create a conversation between employer and candidate.
+ * Returns the existing row if one already exists.
+ */
+export const getOrCreateConversation = async (
+  employerId: string,
+  candidateId: string,
+  jobId?: string
+): Promise<ConversationRow> => {
+  // Try to find existing
+  const { data: existing } = await supabase
+    .from('conversations')
+    .select('*')
+    .eq('employer_id', employerId)
+    .eq('candidate_id', candidateId)
+    .maybeSingle();
+
+  if (existing) return existing as ConversationRow;
+
+  // Create new
+  const { data, error } = await supabase
+    .from('conversations')
+    .insert({
+      employer_id: employerId,
+      candidate_id: candidateId,
+      job_id: jobId ?? null,
+      last_message: '',
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as ConversationRow;
+};
+
+/**
+ * Fetch all messages in a conversation, oldest first.
+ */
+export const getMessages = async (
+  conversationId: string
+): Promise<MessageRow[]> => {
+  const { data, error } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.warn('[DB] getMessages error:', error.message);
+    return [];
+  }
+  return (data ?? []) as MessageRow[];
+};
+
+/**
+ * Send a message. Also updates the conversation's last_message + last_message_at.
+ */
+export const sendMessage = async (
+  conversationId: string,
+  senderId: string,
+  content: string
+): Promise<MessageRow> => {
+  const { data, error } = await supabase
+    .from('messages')
+    .insert({ conversation_id: conversationId, sender_id: senderId, content })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  // Update conversation's last_message preview
+  await supabase
+    .from('conversations')
+    .update({ last_message: content, last_message_at: new Date().toISOString() })
+    .eq('id', conversationId);
+
+  return data as MessageRow;
+};
+
+/**
+ * Mark all messages in a conversation as read (for a specific recipient).
+ */
+export const markMessagesAsRead = async (
+  conversationId: string,
+  recipientId: string
+): Promise<void> => {
+  await supabase
+    .from('messages')
+    .update({ is_read: true })
+    .eq('conversation_id', conversationId)
+    .eq('is_read', false)
+    .neq('sender_id', recipientId);
+};
+

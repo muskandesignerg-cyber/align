@@ -1,5 +1,12 @@
 import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, StatusBar, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  StatusBar,
+  ActivityIndicator,
+  ScrollView,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -14,186 +21,174 @@ import { Job } from '../types/jobs';
 import type { MainStackParamList } from '../navigation/MainTabNavigator';
 
 /**
- * FeedScreen — Main Discover feed with swipeable job cards.
- *
- * Interactions:
- *   • Swipe right → apply  (persisted to Supabase)
- *   • Swipe left  → pass   (persisted to Supabase)
- *   • Swipe up    → super-apply
- *   • Tap card    → open Job Detail screen
+ * FeedScreen — layer stack:
+ *   SafeAreaView (flex:1, white)
+ *     TopBar             ← auto height (~180px)
+ *     ScrollView         ← flex:1, white, holds card
+ *     ActionButtons      ← auto height (~76px), sits above navbar
  */
 export const FeedScreen: React.FC = () => {
   const { state, feedJobs, currentJob, applyToJob, passJob, saveJob, reload } = useDiscover();
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
 
-  // ── Swipe handlers ─────────────────────────────────────────────────────────
+  const handleSwipeRight = useCallback((jobId: string) => {
+    applyToJob(jobId);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  }, [applyToJob]);
 
-  const handleSwipeRight = useCallback(
-    (jobId: string) => {
-      applyToJob(jobId);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    },
-    [applyToJob],
-  );
+  const handleSwipeLeft = useCallback((jobId: string) => {
+    passJob(jobId);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }, [passJob]);
 
-  const handleSwipeLeft = useCallback(
-    (jobId: string) => {
-      passJob(jobId);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    },
-    [passJob],
-  );
+  const handleSwipeUp = useCallback((jobId: string) => {
+    applyToJob(jobId);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+  }, [applyToJob]);
 
-  const handleSwipeUp = useCallback(
-    (jobId: string) => {
-      applyToJob(jobId); // super-apply = apply + flag
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    },
-    [applyToJob],
-  );
+  const handleTapCard = useCallback((job: Job) => {
+    navigation.navigate('JobDetail', { job });
+  }, [navigation]);
 
-  const handleTapCard = useCallback(
-    (job: Job) => { navigation.navigate('JobDetail', { job }); },
-    [navigation],
-  );
-
-  const handleSave = useCallback(
-    (jobId: string) => { saveJob(jobId); },
-    [saveJob],
-  );
-
-  const handlePass = useCallback(
-    (jobId: string) => { passJob(jobId); },
-    [passJob],
-  );
+  const handleSave  = useCallback((jobId: string) => { saveJob(jobId); }, [saveJob]);
+  const handlePass  = useCallback((jobId: string) => { passJob(jobId); }, [passJob]);
 
   const handlePassButton = useCallback(() => {
-    if (!currentJob) return;
-    passJob(currentJob.id);
+    if (currentJob) passJob(currentJob.id);
   }, [currentJob, passJob]);
 
   const handleApplyButton = useCallback(() => {
-    if (!currentJob) return;
-    navigation.navigate('JobDetail', { job: currentJob });
+    if (currentJob) navigation.navigate('JobDetail', { job: currentJob });
   }, [currentJob, navigation]);
-
-  // ── Render ─────────────────────────────────────────────────────────────────
 
   const { isLoading, isScoring, errorType } = state;
   const isEmpty = !isLoading && !errorType && feedJobs.length === 0;
 
-  return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <TopBar />
-
-      {isLoading ? (
+  const renderContent = () => {
+    if (isLoading) {
+      return (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#4C59D7" />
+          <ActivityIndicator size="large" color="#4F46E5" />
           <Text style={styles.loadingText}>Finding matches...</Text>
         </View>
-      ) : errorType === 'offline' ? (
-        <OfflineState onRetry={reload} />
-      ) : errorType === 'error' ? (
-        <ErrorState onRetry={reload} onClose={() => {}} />
-      ) : errorType === 'empty' ? (
-        /* No jobs in DB yet */
+      );
+    }
+    if (errorType === 'offline') return <OfflineState onRetry={reload} />;
+    if (errorType === 'error')   return <ErrorState onRetry={reload} onClose={() => {}} />;
+    if (errorType === 'empty') {
+      return (
         <View style={styles.center}>
           <Text style={styles.emptyTitle}>No jobs available yet</Text>
           <Text style={styles.emptyBody}>Check back soon — employers are posting roles now.</Text>
         </View>
-      ) : isEmpty ? (
-        /* Seen all available jobs */
-        <EmptyFeed onUpdatePreferences={() => {}} />
-      ) : (
-        <>
-          {/* Scoring indicator — subtle banner while Groq is working */}
-          {isScoring && (
-            <View style={styles.scoringBanner}>
-              <ActivityIndicator size="small" color="#4C59D7" />
-              <Text style={styles.scoringText}>Calculating match scores...</Text>
-            </View>
-          )}
+      );
+    }
+    if (isEmpty) return <EmptyFeed onUpdatePreferences={() => {}} />;
 
-          <View style={styles.cardArea}>
-            <CardStack
-              jobs={feedJobs}
-              onSwipeRight={handleSwipeRight}
-              onSwipeLeft={handleSwipeLeft}
-              onSwipeUp={handleSwipeUp}
-              onTap={handleTapCard}
-              onPass={handlePass}
-              onSave={handleSave}
-            />
+    return (
+      <>
+        {isScoring && (
+          <View style={styles.scoringBanner}>
+            <ActivityIndicator size="small" color="#4F46E5" />
+            <Text style={styles.scoringText}>Calculating match scores...</Text>
           </View>
+        )}
+        <CardStack
+          jobs={feedJobs}
+          onSwipeRight={handleSwipeRight}
+          onSwipeLeft={handleSwipeLeft}
+          onSwipeUp={handleSwipeUp}
+          onTap={handleTapCard}
+          onPass={handlePass}
+          onSave={handleSave}
+        />
+      </>
+    );
+  };
 
-          <View style={{ flex: 1 }} />
+  return (
+    <SafeAreaView style={styles.root} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-          <ActionButtons
-            onPass={handlePassButton}
-            onApply={handleApplyButton}
-            disabled={!currentJob}
-          />
-        </>
-      )}
+      {/* Layer 1 — Header */}
+      <TopBar />
+
+      {/* Layer 2 — Scroll area (pure white behind card) */}
+      <ScrollView
+        style={styles.scrollArea}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {renderContent()}
+      </ScrollView>
+
+      {/* Layer 3 — Pass / Apply buttons */}
+      <ActionButtons
+        onPass={handlePassButton}
+        onApply={handleApplyButton}
+        disabled={!currentJob}
+      />
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    paddingBottom: 100,
-  },
-  cardArea: {
-    flex: 0,
+  root: {
+    flex:            1,
     backgroundColor: '#FFFFFF',
   },
+
+  // Pure white scroll area — no gray background
+  scrollArea: {
+    flex:            1,
+    backgroundColor: '#FFFFFF',
+  },
+  scrollContent: {
+    paddingTop:    0,
+    paddingBottom: 180,
+    flexGrow:      1,
+  },
+
   center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    flex:              1,
+    alignItems:        'center',
+    justifyContent:    'center',
     paddingHorizontal: 32,
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: 16,
+    marginTop:  16,
+    fontSize:   16,
     fontWeight: '600',
-    color: '#4C59D7',
-    fontFamily: 'PlusJakartaSans_600SemiBold',
+    color:      '#4F46E5',
   },
   emptyTitle: {
-    fontSize: 22,
-    fontFamily: 'PlusJakartaSans_700Bold',
-    color: '#1A1A2E',
-    textAlign: 'center',
+    fontSize:   22,
+    fontWeight: '700',
+    color:      '#1A1A2E',
+    textAlign:  'center',
   },
   emptyBody: {
-    fontSize: 15,
-    fontFamily: 'PlusJakartaSans_400Regular',
-    color: '#6B7280',
-    textAlign: 'center',
-    marginTop: 8,
+    fontSize:   15,
+    fontWeight: '400',
+    color:      '#6B7280',
+    textAlign:  'center',
+    marginTop:  8,
     lineHeight: 22,
   },
   scoringBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: '#F8F9FF',
-    borderWidth: 1,
-    borderColor: '#D0D7FF',
-    borderRadius: 12,
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               10,
+    backgroundColor:   '#F0F0FF',
+    borderRadius:      12,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginHorizontal: 20,
-    marginTop: 16,
-    marginBottom: 4,
+    paddingVertical:   10,
+    marginHorizontal:  20,
+    marginBottom:      12,
   },
   scoringText: {
-    fontSize: 14,
-    fontFamily: 'PlusJakartaSans_500Medium',
-    color: '#4C59D7',
+    fontSize:   14,
+    fontWeight: '500',
+    color:      '#4F46E5',
   },
 });

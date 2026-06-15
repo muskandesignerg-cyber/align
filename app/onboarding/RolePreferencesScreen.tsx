@@ -458,9 +458,9 @@ const styles = StyleSheet.create({
   flex:      { flex: 1 },
 
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 4,
-    paddingBottom: 16,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 160,
   },
 
   // ── Heading ──────────────────────────────────────────────────────────────

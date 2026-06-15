@@ -26,7 +26,7 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   {
     routeName:  'Candidates',
-    label:      'Dashboard',
+    label:      'Pipeline',
     icon:       'layers-outline',
     iconActive: 'layers-outline',
   },
@@ -35,6 +35,12 @@ const NAV_ITEMS: NavItem[] = [
     label:      'Post Role',
     icon:       'add-circle-outline',
     iconActive: 'add-circle-outline',
+  },
+  {
+    routeName:  'Analytics',
+    label:      'Analytics',
+    icon:       'bar-chart-outline',
+    iconActive: 'bar-chart-outline',
   },
   {
     routeName:  'EMessages',
@@ -95,7 +101,10 @@ export default function EmployerFloatingNavBar({ state, descriptors, navigation 
 const S = StyleSheet.create({
   wrapper: {
     position: 'absolute',
-    bottom: 20, left: 20, right: 20,
+    bottom: 0, left: 0, right: 0,
+    paddingTop: 16, paddingBottom: 20,
+    paddingHorizontal: 20,
+    backgroundColor: '#FFFFFF',
     alignItems: 'stretch',
     zIndex: 999,
   },

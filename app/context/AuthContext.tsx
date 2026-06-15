@@ -58,17 +58,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const loadProfile = useCallback(async (userId: string) => {
     try {
-      const p = await getProfile(userId);
+      // 3-second hard timeout for profile fetch to prevent infinite loading
+      const timeout = <T,>(p: Promise<T>, ms: number): Promise<T> =>
+        Promise.race([
+          p,
+          new Promise<T>((_, reject) =>
+            setTimeout(() => reject(new Error('Profile fetch timeout')), ms)
+          ),
+        ]);
+
+      const p = await timeout(getProfile(userId), 3000).catch(() => null);
       if (p) {
         setProfile(p);
       } else {
-        // Profile row doesn't exist yet (trigger may have failed).
-        // Insert a minimal row so the user can proceed to role selection.
-        const { data, error } = await supabase
-          .from('profiles')
-          .upsert({ id: userId, onboarding_complete: false }, { onConflict: 'id' })
-          .select()
-          .single();
+        // Fallback upsert with timeout
+        const { data } = await timeout(
+          supabase
+            .from('profiles')
+            .upsert({ id: userId, onboarding_complete: false }, { onConflict: 'id' })
+            .select()
+            .single(),
+          3000
+        ).catch(() => ({ data: null }));
+
         if (data) setProfile(data as any);
         else setProfile(null);
       }
@@ -123,16 +135,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     // ── 1. Load existing session on mount ──────────────────────────────────
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      if (isSigningOutRef.current) return; // ignore during sign-out
-      setSession(s);
-      setUser(s?.user ?? null);
-      if (s?.user) {
-        loadProfile(s.user.id).finally(() => setLoading(false));
-      } else {
+    const initSession = async () => {
+      try {
+        const timeout = <T,>(p: Promise<T>, ms: number): Promise<T> =>
+          Promise.race([
+            p,
+            new Promise<T>((_, reject) =>
+              setTimeout(() => reject(new Error('getSession timeout')), ms)
+            ),
+          ]);
+
+        const { data: { session: s } } = await timeout(supabase.auth.getSession(), 3000);
+        if (isSigningOutRef.current) return; // ignore during sign-out
+        setSession(s);
+        setUser(s?.user ?? null);
+        if (s?.user) {
+          loadProfile(s.user.id).finally(() => setLoading(false));
+        } else {
+          setLoading(false);
+        }
+      } catch (e) {
+        console.warn('getSession timed out or failed:', e);
         setLoading(false);
       }
-    });
+    };
+    initSession();
 
     // ── 2. Subscribe to all auth state changes ─────────────────────────────
     const { data: listener } = supabase.auth.onAuthStateChange(

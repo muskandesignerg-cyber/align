@@ -9,6 +9,7 @@
  */
 
 import React, { useCallback, useEffect, useRef } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -30,7 +31,7 @@ import { useDashboard } from '../context/DashboardContext';
 
 // ─── Card data type ────────────────────────────────────────────────────────────
 
-type StatusType = 'Applied' | 'In Review' | 'Interviewing' | 'Offer' | 'Rejected';
+type StatusType = 'Applied' | 'In Review' | 'Assessment Sent' | 'Interviewing' | 'Offer' | 'Rejected';
 
 interface CardData {
   id: string;
@@ -62,9 +63,9 @@ const DISPLAY_CARDS: CardData[] = [
     companyName: 'Exposys Data Labs',
     jobTitle: 'UI/UX Designer',
     location: 'Bangalore',
-    status: 'Applied',
-    stage: 1,
-    postedDate: 'Applied Today',
+    status: 'Assessment Sent',
+    stage: 2,
+    postedDate: 'Applied 2 days ago',
   },
   {
     id: 'c3',
@@ -72,9 +73,9 @@ const DISPLAY_CARDS: CardData[] = [
     companyName: 'NovaTech Industries',
     jobTitle: 'Product Manager',
     location: 'Mumbai',
-    status: 'In Review',
-    stage: 2,
-    postedDate: 'Applied 2 days ago',
+    status: 'Interviewing',
+    stage: 3,
+    postedDate: 'Applied 5 days ago',
   },
 ];
 
@@ -154,10 +155,12 @@ function getBadge(status: StatusType) {
       return { bg: '#EEF2FF', border: '#C7D2FE', color: '#4F46E5', label: 'Applied' };
     case 'In Review':
       return { bg: '#FFF7ED', border: '#FED7AA', color: '#F59E0B', label: 'In Review' };
+    case 'Assessment Sent':
+      return { bg: '#F0F0FF', border: '#C7C8F0', color: '#4F46E5', label: 'Round 2 ⚡' };
     case 'Interviewing':
-      return { bg: '#F0FDF4', border: '#BBF7D0', color: '#22C55E', label: 'Interview' };
+      return { bg: '#F0FDF4', border: '#BBF7D0', color: '#10B981', label: 'Round 3 🎤' };
     case 'Offer':
-      return { bg: '#F0FDF4', border: '#BBF7D0', color: '#22C55E', label: 'Offer' };
+      return { bg: '#FFFBEB', border: '#FDE68A', color: '#F59E0B', label: 'Offer 🎉' };
     case 'Rejected':
       return { bg: '#FFF0F0', border: '#FECACA', color: '#EF4444', label: 'Rejected' };
     default:
@@ -207,7 +210,7 @@ function CountUpStat({
 
 // ─── Stage Tracker ─────────────────────────────────────────────────────────────
 
-const STAGE_LABELS = ['Applied', 'Reviewed', 'Interview', 'Decision'];
+const STAGE_LABELS = ['Applied', 'Round 2', 'Round 3', 'Hired'];
 
 function StageTracker({ stage, rejected = false }: { stage: number; rejected?: boolean }) {
   return (
@@ -295,6 +298,14 @@ const DashboardInner: React.FC = () => {
   const { state, refreshApplications } = useDashboard();
   const navigation = useNavigation<NavProp>();
 
+  // Reload data every time this tab comes into focus — fixes stale-state
+  // after applying so data is always fresh without a manual pull-to-refresh.
+  useFocusEffect(
+    useCallback(() => {
+      refreshApplications();
+    }, [refreshApplications]),
+  );
+
   // Stats — use real data from context (falls back to mock in DashboardContext)
   const appliedCount    = state.stats?.applied      ?? 9;
   const inReviewCount   = state.stats?.inReview     ?? 3;
@@ -357,12 +368,13 @@ const DashboardInner: React.FC = () => {
               navigation.navigate('JobDetail', {
                 job,
                 fromDashboard: true,
-                applicationStatus: card.status as 'Applied' | 'In Review',
+                applicationStatus: card.status as any,
                 postedDate: card.postedDate,
               });
             }}
           />
         ))}
+
 
       </ScrollView>
     </SafeAreaView>
@@ -405,7 +417,7 @@ const S = StyleSheet.create({
 
   // Scroll
   scroll:        { flex: 1 },
-  scrollContent: { padding: 20, paddingBottom: 100 },
+  scrollContent: { padding: 20, paddingBottom: 160 },
 
   // Stats
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
@@ -482,4 +494,27 @@ const stageS = StyleSheet.create({
     }),
   },
   line: { flex: 1, height: 2, marginHorizontal: 6 },
+
+  // Assessment & Interview banners
+  assessBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: '#F0F0FF', borderRadius: 16, padding: 14,
+    marginBottom: 12, borderWidth: 1, borderColor: 'rgba(79,70,229,0.15)',
+  },
+  interviewBanner: {
+    backgroundColor: '#F0FDF4', borderColor: 'rgba(16,185,129,0.15)',
+  },
+  assessBannerLeft: {
+    width: 42, height: 42, borderRadius: 12,
+    backgroundColor: 'rgba(79,70,229,0.1)',
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
+  assessBannerContent: { flex: 1 },
+  assessBannerTitle: { fontSize: 14, fontWeight: '700', color: '#4F46E5', marginBottom: 2 },
+  assessBannerSub: { fontSize: 12, color: '#666666' },
+  assessBannerArrow: {
+    width: 30, height: 30, borderRadius: 8,
+    backgroundColor: 'rgba(79,70,229,0.1)', alignItems: 'center', justifyContent: 'center',
+  },
 });
+

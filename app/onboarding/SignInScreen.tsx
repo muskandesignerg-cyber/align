@@ -19,6 +19,7 @@ import {
   Platform,
   ActivityIndicator,
   Animated,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -209,10 +210,21 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
-      });
+      const timeout = <T,>(p: Promise<T>, ms: number): Promise<T> =>
+        Promise.race([
+          p,
+          new Promise<T>((_, reject) =>
+            setTimeout(() => reject(new Error('Sign in timed out')), ms)
+          ),
+        ]);
+
+      const { data, error } = await timeout(
+        supabase.auth.signInWithPassword({
+          email: email.trim().toLowerCase(),
+          password,
+        }),
+        4000 // 4 seconds max for sign-in
+      );
 
       if (error) {
         if (
@@ -232,6 +244,8 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
       if (!data.user) {
         setToastMsg('Sign in failed. Please try again.');
       }
+    } catch (e: any) {
+      setToastMsg(e.message || 'Network error during sign in.');
     } finally {
       setIsLoading(false);
     }
@@ -283,7 +297,10 @@ export const SignInScreen: React.FC<Props> = ({ navigation }) => {
           {/* ── Logo block (small, centered) ── */}
           <Animated.View style={[s.logoBlock, { opacity: logoOp, transform: [{ translateY: logoY }] }]}>
             <View style={[s.logoCard, logoShadow]}>
-              <MiniLightningBolt />
+              <Image
+                source={require('../../assets/images/align-icon.png')}
+                style={{ width: 56, height: 56, resizeMode: 'contain' }}
+              />
             </View>
           </Animated.View>
 

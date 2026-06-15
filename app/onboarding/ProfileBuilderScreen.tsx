@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,10 @@ import {
   Alert,
   ActivityIndicator,
   TextInput,
+  Animated,
+  Easing,
 } from 'react-native';
+import { FileSearch } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as DocumentPicker from 'expo-document-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -71,6 +74,43 @@ export const ProfileBuilderScreen: React.FC<Props> = ({ navigation }) => {
       return () => clearTimeout(timer);
     }
   }, [state.showAiBadges, dispatch]);
+
+  // Loading Screen Animations
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const dot1 = useRef(new Animated.Value(1)).current;
+  const dot2 = useRef(new Animated.Value(0.5)).current;
+  const dot3 = useRef(new Animated.Value(0.25)).current;
+
+  useEffect(() => {
+    if (state.extractionStatus === 'extracting') {
+      Animated.timing(progressAnim, {
+        toValue: 85,
+        duration: 12000,
+        easing: Easing.linear,
+        useNativeDriver: false,
+      }).start();
+
+      const createPulse = (anim: Animated.Value, initialVal: number) => {
+        return Animated.sequence([
+          Animated.timing(anim, { toValue: 1, duration: 400, useNativeDriver: true }),
+          Animated.timing(anim, { toValue: 0.25, duration: 400, useNativeDriver: true })
+        ]);
+      };
+
+      Animated.loop(
+        Animated.stagger(200, [
+          createPulse(dot1, 1),
+          createPulse(dot2, 0.5),
+          createPulse(dot3, 0.25),
+        ])
+      ).start();
+    } else {
+      progressAnim.setValue(0);
+      dot1.setValue(1);
+      dot2.setValue(0.5);
+      dot3.setValue(0.25);
+    }
+  }, [state.extractionStatus]);
 
   // ─── PDF Upload + AI Extract ───────────────────────────────────────────
   const handleUpload = useCallback(async () => {
@@ -227,7 +267,7 @@ export const ProfileBuilderScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* OnboardingHeader handles top safe-area + back arrow + progress bar + step label */}
         <OnboardingHeader
-          currentStep={1}
+          currentStep={2}
           onBack={() => navigation.goBack()}
         />
 
@@ -292,26 +332,44 @@ export const ProfileBuilderScreen: React.FC<Props> = ({ navigation }) => {
 
   // ─── Extracting State ──────────────────────────────────────────────────
   if (state.extractionStatus === 'extracting') {
-    const isVision = uploadStatus === 'vision';
     return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
-        <View style={styles.extractingContainer}>
-          <View style={styles.extractingIconWrap}>
-            <Text style={styles.extractingEmoji}>{isVision ? '👁️' : '🤖'}</Text>
+      <SafeAreaView style={[styles.container, { backgroundColor: '#FFFFFF' }]}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
+          
+          <View style={{ width: 80, height: 80, backgroundColor: '#EEF2FF', borderRadius: 24, justifyContent: 'center', alignItems: 'center', marginBottom: 32 }}>
+            <FileSearch size={36} color="#4F46E5" strokeWidth={2} />
           </View>
-          <Text style={styles.extractingTitle}>
-            {isVision ? 'Analyzing CV layout...' : 'AI is analyzing your profile'}
+
+          <Text style={{ fontSize: 26, fontWeight: '700', color: '#0A0A0A', textAlign: 'center', marginBottom: 10 }}>
+            Analyzing your CV...
           </Text>
-          <Text style={styles.extractingSubtitle}>
-            {isVision
-              ? 'Image-based PDF detected — using visual AI'
-              : 'Identifying skills, education, and experience'}
+          
+          <Text style={{ fontSize: 15, fontWeight: '400', color: '#888888', textAlign: 'center', lineHeight: 24, maxWidth: 280, marginBottom: 40 }}>
+            Image-based PDF detected — using visual AI to extract your details.
           </Text>
-          <ActivityIndicator color={Colors.primary} size="large" style={{ marginTop: Spacing.s24 }} />
-          {isVision && (
-            <Text style={styles.extractingHint}>This may take 10–15 seconds</Text>
-          )}
+          
+          <View style={{ width: '100%', height: 4, backgroundColor: '#E8E8E8', borderRadius: 999, marginBottom: 16, overflow: 'hidden' }}>
+            <Animated.View style={{ 
+              height: '100%', 
+              backgroundColor: '#4F46E5', 
+              borderRadius: 999,
+              width: progressAnim.interpolate({
+                inputRange: [0, 100],
+                outputRange: ['0%', '100%']
+              })
+            }} />
+          </View>
+
+          <Text style={{ fontSize: 13, fontWeight: '400', color: '#AAAAAA', textAlign: 'center', fontStyle: 'normal' }}>
+            This may take 10–15 seconds
+          </Text>
+
+          <View style={{ flexDirection: 'row', gap: 8, justifyContent: 'center', marginTop: 32 }}>
+            <Animated.View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#4F46E5', opacity: dot1 }} />
+            <Animated.View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#4F46E5', opacity: dot2 }} />
+            <Animated.View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#4F46E5', opacity: dot3 }} />
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -322,7 +380,7 @@ export const ProfileBuilderScreen: React.FC<Props> = ({ navigation }) => {
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
       <OnboardingHeader
-        currentStep={1}
+        currentStep={2}
         onBack={() => navigation.goBack()}
       />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
   StatusBar,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -29,18 +30,20 @@ import JobHeader from '../../components/employer/pipeline/JobHeader';
 export function EmployerTopBar() {
   return (
     <View style={tbStyles.bar}>
-      <View style={tbStyles.logo}>
-        <Svg width={18} height={18} viewBox="0 0 24 24" fill="#4C59D7" stroke="none">
-          <Rect x="3" y="3" width="7" height="7" rx="1.5" />
-          <Rect x="14" y="3" width="7" height="7" rx="1.5" />
-          <Rect x="3" y="14" width="7" height="7" rx="1.5" />
-          <Rect x="14" y="14" width="7" height="7" rx="1.5" />
-        </Svg>
+      <View style={{ flex: 1 }} />
+      <Image
+        source={require('../../../assets/images/align-logo.png')}
+        style={{
+          width: 90,
+          height: 28,
+          resizeMode: 'contain',
+        }}
+      />
+      <View style={{ flex: 1, alignItems: 'flex-end' }}>
+        <TouchableOpacity style={tbStyles.bell} activeOpacity={0.7}>
+          <BellIcon size={24} color="#1A1A2E" dot={true} />
+        </TouchableOpacity>
       </View>
-      <Text style={tbStyles.brand}>TALENT.LOGIC</Text>
-      <TouchableOpacity style={tbStyles.bell} activeOpacity={0.7}>
-        <BellIcon size={24} color="#1A1A2E" dot={true} />
-      </TouchableOpacity>
     </View>
   );
 }
@@ -111,8 +114,18 @@ const STAGE_CONFIG: Record<string, { label: string; dot: string }> = {
 };
 
 // ─── Inner screen ─────────────────────────────────────────────────────────────
+import { getOrCreateConversation } from '../../lib/database';
+import { useAuth } from '../../context/AuthContext';
+import ChatScreen from '../ChatScreen';
+
 function JobsInner() {
   const { state, dispatch, stageCounts, moveCandidate } = useEmployer();
+  const { user } = useAuth();
+
+  // Chat state
+  const [chatOpen, setChatOpen] = useState(false);
+  const [activeConvId, setActiveConvId] = useState<string | null>(null);
+  const [chatCandidate, setChatCandidate] = useState<PipelineCandidate | null>(null);
 
   const handleCandidatePress = useCallback((c: PipelineCandidate) => {
     dispatch({ type: 'SELECT_CANDIDATE', candidate: c });
@@ -130,6 +143,18 @@ function JobsInner() {
     (id: string) => dispatch({ type: 'DISMISS_CANDIDATE', candidateId: id }),
     [dispatch],
   );
+
+  const handleMessage = useCallback(async (c: PipelineCandidate) => {
+    if (!user) return;
+    try {
+      const conv = await getOrCreateConversation(user.id, c.candidateId, c.jobId);
+      setActiveConvId(conv.id);
+      setChatCandidate(c);
+      setChatOpen(true);
+    } catch (e) {
+      console.error('[Jobs] Failed to open chat:', e);
+    }
+  }, [user]);
 
   const selectedJob = state.jobPostings.find((j) => j.id === state.selectedJobId);
   const activeStage = state.activeStageFilter as PipelineStage;
@@ -211,6 +236,7 @@ function JobsInner() {
             onPress={handleCandidatePress}
             onMove={handleMoveCandidate}
             onDismiss={handleDismiss}
+            onMessage={handleMessage}
           />
         ))}
 
@@ -241,6 +267,16 @@ function JobsInner() {
         visible={state.showPostRole}
         onClose={() => dispatch({ type: 'SET_SHOW_POST_ROLE', value: false })}
       />
+
+      {/* Chat modal overlay */}
+      <ChatScreen
+        visible={chatOpen}
+        conversationId={activeConvId}
+        currentUserId={user?.id ?? ''}
+        otherUserName={chatCandidate?.candidateName ?? 'Candidate'}
+        jobTitle={selectedJob.roleTitle}
+        onClose={() => { setChatOpen(false); setActiveConvId(null); setChatCandidate(null); }}
+      />
     </SafeAreaView>
   );
 }
@@ -260,6 +296,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
+    paddingBottom: 160,
     gap: 10,
   },
 

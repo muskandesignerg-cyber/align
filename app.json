@@ -1,13 +1,15 @@
 {
   "expo": {
-    "name": "TALENT.LOGIC",
-    "slug": "talent-logic",
+    "name": "Align",
+    "slug": "align-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/align-icon.png",
     "userInterfaceStyle": "light",
-    "scheme": "talent-logic",
+    "scheme": "align",
     "splash": {
+      "image": "./assets/images/align-icon.png",
+      "resizeMode": "contain",
       "backgroundColor": "#FFFFFF"
     },
     "ios": {
@@ -34,7 +36,7 @@
           "autoVerify": true,
           "data": [
             {
-              "scheme": "talent-logic",
+              "scheme": "align",
               "host": "auth",
               "pathPrefix": "/callback"
             }

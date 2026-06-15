@@ -9,6 +9,7 @@ interface CandidateMiniCardProps {
   onPress: (candidate: PipelineCandidate) => void;
   onMove: (candidateId: string, fromStage: PipelineStage, toStage: PipelineStage) => void;
   onDismiss: (candidateId: string) => void;
+  onMessage?: (candidate: PipelineCandidate) => void;
 }
 
 const STAGE_LABELS: Record<PipelineStage, string> = {
@@ -47,19 +48,26 @@ export default function CandidateMiniCard({
   onPress,
   onMove,
   onDismiss,
+  onMessage,
 }: CandidateMiniCardProps) {
   const handleDots = () => {
     const { Alert, ActionSheetIOS } = require('react-native');
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options: ['View Profile', 'Move to Stage', 'Send Message', 'Schedule Interview', 'Reject', 'Cancel'],
+          options: ['View Profile', 'Move to Stage', 'Message Candidate', 'Schedule Interview', 'Reject', 'Cancel'],
           destructiveButtonIndex: 4,
           cancelButtonIndex: 5,
         },
         (idx: number) => {
           if (idx === 0) onPress(candidate);
           if (idx === 1) showMoveSheet();
+          if (idx === 2) {
+            // Message Candidate (new feature)
+            // Handled via a new prop or by routing. Since we don't have navigation prop here easily,
+            // the cleanest way is adding onMessage to CandidateMiniCard props.
+            if (onMessage) onMessage(candidate);
+          }
           if (idx === 4) onDismiss(candidate.id);
         },
       );
@@ -69,6 +77,7 @@ export default function CandidateMiniCard({
         'Choose an action',
         [
           { text: 'View Profile', onPress: () => onPress(candidate) },
+          { text: 'Message Candidate', onPress: () => onMessage && onMessage(candidate) },
           { text: 'Move to Stage', onPress: showMoveSheet },
           { text: 'Reject', style: 'destructive', onPress: () => onDismiss(candidate.id) },
           { text: 'Cancel', style: 'cancel' },
