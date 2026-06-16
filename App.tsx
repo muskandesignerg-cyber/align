@@ -18,9 +18,10 @@ if (Platform.OS === 'web') {
   try {
     const s = document.createElement('style');
     s.textContent = `
-      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-      html, body { width: 100%; height: 100%; background: #0F1117; overflow: hidden; }
+      *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+      html, body { margin: 0; padding: 0; background: #0F1117; width: 100%; height: 100%; overflow: hidden; }
       input, textarea { outline: none !important; }
+      ::-webkit-scrollbar { display: none; }
     `;
     document.head.appendChild(s);
   } catch (_) {}
@@ -46,27 +47,26 @@ export default function App() {
 
   if (!fontsLoaded) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0F1117' }}>
         <ActivityIndicator color={Colors.primary} size="large" />
       </View>
     );
   }
 
-  // ── Web: GestureHandlerRootView fills the viewport (dark bg),
-  //         inner View is the 390×844 phone frame (white).
-  //         GestureHandlerRootView MUST be root — flex:1 guarantees it
-  //         fills whatever #root gives it (100% viewport).
+  // ── Web: Plain View fills browser (dark bg), phone frame inside ─────────────
+  // GestureHandlerRootView goes INSIDE the phone frame to avoid root issues on web
   if (Platform.OS === 'web') {
     return (
-      <GestureHandlerRootView
+      <View
         style={{
           flex: 1,
+          width: '100%' as any,
           backgroundColor: '#0F1117',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        {/* 390×844 phone frame */}
+        {/* White 390×844 phone frame */}
         <View
           style={{
             width: 390,
@@ -75,17 +75,19 @@ export default function App() {
             overflow: 'hidden',
           }}
         >
-          <SafeAreaProvider initialMetrics={WEB_METRICS}>
-            <AuthProvider>
-              <RootNavigator />
-            </AuthProvider>
-          </SafeAreaProvider>
+          <GestureHandlerRootView style={{ flex: 1 }}>
+            <SafeAreaProvider initialMetrics={WEB_METRICS}>
+              <AuthProvider>
+                <RootNavigator />
+              </AuthProvider>
+            </SafeAreaProvider>
+          </GestureHandlerRootView>
         </View>
-      </GestureHandlerRootView>
+      </View>
     );
   }
 
-  // ── Native iOS / Android ─────────────────────────────────────────────────
+  // ── Native iOS / Android ─────────────────────────────────────────────────────
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
