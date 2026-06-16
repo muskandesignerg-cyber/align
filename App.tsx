@@ -9,7 +9,7 @@ import {
   PlusJakartaSans_600SemiBold,
   PlusJakartaSans_700Bold,
 } from '@expo-google-fonts/plus-jakarta-sans';
-import { View, ActivityIndicator, Platform, StyleSheet, TextInput, Dimensions } from 'react-native';
+import { View, ActivityIndicator, Platform, StyleSheet, TextInput } from 'react-native';
 import { RootNavigator } from './app/navigation/RootNavigator';
 import { AuthProvider } from './app/context/AuthContext';
 import { Colors } from './app/theme/colors';
@@ -18,10 +18,9 @@ import { Colors } from './app/theme/colors';
 if (Platform.OS === 'web') {
   const style = document.createElement('style');
   style.textContent = `
-    input, textarea, [contenteditable] {
-      outline: none !important;
-      -webkit-tap-highlight-color: transparent;
-    }
+    input, textarea, [contenteditable] { outline: none !important; }
+    html, body { background: #0F1117 !important; margin: 0; padding: 0; height: 100%; }
+    #root { background: #0F1117 !important; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
   `;
   document.head.appendChild(style);
 }
@@ -32,13 +31,10 @@ if (Platform.OS === 'web') {
   style: [{ outlineWidth: 0 }],
 };
 
-// ─── Safe-area metrics for web ────────────────────────────────────────────────
-// SafeAreaView always returns 0 on web. Provide explicit insets so the header
-// and navbar are never hidden behind edges on any mobile browser.
-const dims = Dimensions.get('window');
+// Safe-area metrics for web — simulates iPhone 15 Pro
 const WEB_METRICS = {
-  insets: { top: 44, bottom: 34, left: 0, right: 0 },
-  frame: { x: 0, y: 0, width: dims.width, height: dims.height },
+  insets: { top: 59, bottom: 34, left: 0, right: 0 },
+  frame: { x: 0, y: 0, width: 390, height: 844 },
 };
 
 export default function App() {
@@ -57,21 +53,27 @@ export default function App() {
     );
   }
 
-  // Web: CSS (#root in index.html) handles the 390px frame + black sides.
-  // React just fills that frame with the app content.
+  // ─── Web: Render the app inside a strict 390px phone frame ─────────────────
+  // React Native Web ignores CSS width on #root — we MUST use RN layout here.
   if (Platform.OS === 'web') {
     return (
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <SafeAreaProvider initialMetrics={WEB_METRICS}>
-          <AuthProvider>
-            <RootNavigator />
-          </AuthProvider>
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
+      // Outer: fills entire browser window, dark background
+      <View style={styles.webOuter}>
+        {/* Inner: strict 390×844 phone frame, white background */}
+        <View style={styles.phoneFrame}>
+          <GestureHandlerRootView style={{ flex: 1 }}>
+            <SafeAreaProvider initialMetrics={WEB_METRICS}>
+              <AuthProvider>
+                <RootNavigator />
+              </AuthProvider>
+            </SafeAreaProvider>
+          </GestureHandlerRootView>
+        </View>
+      </View>
     );
   }
 
-  // Native iOS/Android: OS provides real safe-area insets automatically
+  // ─── Native iOS/Android: full screen, OS handles safe areas ────────────────
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
@@ -88,6 +90,27 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.white,
+    backgroundColor: '#FFFFFF',
+  },
+
+  // Dark background — fills the whole browser window
+  webOuter: {
+    flex: 1,
+    backgroundColor: '#0F1117',
+    alignItems: 'center',
+    justifyContent: 'center',
+    // @ts-ignore — web-only
+    minHeight: '100vh',
+    width: '100%',
+  },
+
+  // The 390px phone frame — this is what React Native Web actually respects
+  phoneFrame: {
+    width: 390,
+    height: 844,
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+    // @ts-ignore — web-only shadow
+    boxShadow: '0 0 60px rgba(0,0,0,0.5)',
   },
 });
