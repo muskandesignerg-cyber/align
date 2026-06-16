@@ -60,8 +60,7 @@ function isWorkMode(s?: string | null): boolean {
 
 const MAX_VISIBLE_CHIPS = 3;
 const DEMO_DESC =
-  'We are looking for a talented Software Engineer to build scalable products. ' +
-  'Strong problem-solving skills and experience with modern frameworks required.';
+  'We are seeking a highly motivated and results-driven sales professional to join our sales team. A...';
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
