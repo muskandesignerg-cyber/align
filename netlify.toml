@@ -1,4 +1,4 @@
-# Netlify configuration for TALENT.LOGIC (Expo Web SPA)
+# Netlify configuration for Align (Expo Web SPA)
 
 [build]
   command = "npx expo export --platform web"
@@ -6,6 +6,9 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  NODE_OPTIONS = "--max-old-space-size=4096"
+  EXPO_NO_TELEMETRY = "1"
+  CI = "1"
   # EXPO_PUBLIC_GROQ_API_KEY must be set in Netlify Dashboard → Environment Variables
 
 # ─── SPA fallback ─────────────────────────────────────────────────────────────
