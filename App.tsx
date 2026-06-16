@@ -9,33 +9,20 @@ import {
   PlusJakartaSans_600SemiBold,
   PlusJakartaSans_700Bold,
 } from '@expo-google-fonts/plus-jakarta-sans';
-import {
-  View,
-  ActivityIndicator,
-  Platform,
-  StyleSheet,
-  TextInput,
-  Dimensions,
-} from 'react-native';
+import { View, ActivityIndicator, Platform, TextInput } from 'react-native';
 import { RootNavigator } from './app/navigation/RootNavigator';
 import { AuthProvider } from './app/context/AuthContext';
 import { Colors } from './app/theme/colors';
 
-// Remove focus outline on web inputs
 if (Platform.OS === 'web') {
   try {
-    const style = document.createElement('style');
-    style.textContent = `
-      * { -webkit-tap-highlight-color: transparent; }
+    const s = document.createElement('style');
+    s.textContent = `
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { width: 100%; height: 100%; background: #0F1117; overflow: hidden; }
       input, textarea { outline: none !important; }
-      html, body {
-        margin: 0; padding: 0;
-        width: 100%; height: 100%;
-        background: #0F1117;
-        overflow: hidden;
-      }
     `;
-    document.head.appendChild(style);
+    document.head.appendChild(s);
   } catch (_) {}
 }
 
@@ -44,14 +31,9 @@ if (Platform.OS === 'web') {
   selectionColor: '#4C59D7',
 };
 
-// iPhone 15 Pro dimensions for the phone frame
-const PHONE_W = 390;
-const PHONE_H = 844;
-
-// Safe-area metrics for web (simulates iPhone 15 Pro)
 const WEB_METRICS = {
   insets: { top: 44, bottom: 34, left: 0, right: 0 },
-  frame: { x: 0, y: 0, width: PHONE_W, height: PHONE_H },
+  frame: { x: 0, y: 0, width: 390, height: 844 },
 };
 
 export default function App() {
@@ -64,49 +46,46 @@ export default function App() {
 
   if (!fontsLoaded) {
     return (
-      <View style={styles.loader}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
         <ActivityIndicator color={Colors.primary} size="large" />
       </View>
     );
   }
 
-  // ── Web: Phone frame centred on dark background ──────────────────────────
+  // ── Web: GestureHandlerRootView fills the viewport (dark bg),
+  //         inner View is the 390×844 phone frame (white).
+  //         GestureHandlerRootView MUST be root — flex:1 guarantees it
+  //         fills whatever #root gives it (100% viewport).
   if (Platform.OS === 'web') {
-    const win = Dimensions.get('window');
     return (
-      <View
+      <GestureHandlerRootView
         style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: win.width,
-          height: win.height,
+          flex: 1,
           backgroundColor: '#0F1117',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
+        {/* 390×844 phone frame */}
         <View
           style={{
-            width: PHONE_W,
-            height: PHONE_H,
+            width: 390,
+            height: 844,
             backgroundColor: '#FFFFFF',
             overflow: 'hidden',
           }}
         >
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <SafeAreaProvider initialMetrics={WEB_METRICS}>
-              <AuthProvider>
-                <RootNavigator />
-              </AuthProvider>
-            </SafeAreaProvider>
-          </GestureHandlerRootView>
+          <SafeAreaProvider initialMetrics={WEB_METRICS}>
+            <AuthProvider>
+              <RootNavigator />
+            </AuthProvider>
+          </SafeAreaProvider>
         </View>
-      </View>
+      </GestureHandlerRootView>
     );
   }
 
-  // ── Native iOS/Android ───────────────────────────────────────────────────
+  // ── Native iOS / Android ─────────────────────────────────────────────────
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
@@ -117,12 +96,3 @@ export default function App() {
     </GestureHandlerRootView>
   );
 }
-
-const styles = StyleSheet.create({
-  loader: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-  },
-});
