@@ -5,53 +5,67 @@
     <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-
-    <!-- PWA / mobile browser meta -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="theme-color" content="#ffffff" />
-
     <title>Align</title>
 
     <style id="expo-reset">
-      *, *::before, *::after {
+      * {
         box-sizing: border-box;
+        margin: 0;
+        padding: 0;
         -webkit-tap-highlight-color: transparent;
       }
 
       html, body {
-        margin: 0;
-        padding: 0;
+        width: 100%;
         height: 100%;
-        height: 100dvh;
+        background: #000000;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
         overflow: hidden;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
       }
 
-      /* Desktop: dark background behind the phone shell */
-      body {
-        background-color: #0F1117;
+      #root {
+        width: 390px;
+        max-width: 390px;
+        height: 100vh;
+        max-height: 844px;
+        background: #FFFFFF;
+        position: relative;
+        overflow: hidden;
+        margin: 0 auto;
+        display: flex;
+        flex: 1;
       }
 
-      /* Mobile (<768px): white background, full screen */
-      @media (max-width: 767px) {
-        body {
-          background-color: #ffffff;
+      /* On actual mobile phones (<= 430px), fill the full screen */
+      @media (max-width: 430px) {
+        html, body {
+          background: #FFFFFF;
+        }
+        #root {
+          width: 100%;
+          max-width: 100%;
+          height: 100%;
+          max-height: 100%;
         }
       }
 
-      /* Root — full viewport, NO extra padding.
-         Safe area insets are handled by SafeAreaProvider in React. */
-      #root {
-        display: flex;
-        flex: 1;
-        width: 100%;
-        height: 100%;
-        height: 100dvh;
+      /* Hide scrollbars but keep scroll working */
+      ::-webkit-scrollbar {
+        display: none;
+      }
+      * {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
       }
     </style>
   </head>

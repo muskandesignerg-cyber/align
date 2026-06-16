@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
-import { MapPin, Briefcase, Users, X, Heart } from 'lucide-react-native';
+import { MapPin, Briefcase, Users, Clock, X, Heart } from 'lucide-react-native';
 import { Job } from '../../types/jobs';
 
 interface JobCardProps {
@@ -142,10 +142,16 @@ export default function JobCard({ job, cardWidth, onPassPress, onSavePress, onPr
         {displayDesc}
       </Text>
 
-      {/* ROW 7 — Company size */}
+      {/* ROW 7 — Company info: employees + posted date */}
       <View style={styles.metaRow}>
-        <Users size={13} color="#999999" strokeWidth={2} />
-        <Text style={styles.metaText}>{job.companySize ? `${job.companySize} employees` : 'Team info not available'}</Text>
+        <View style={styles.metaItem}>
+          <Users size={12} color="#AAAAAA" strokeWidth={2} />
+          <Text style={styles.metaText}>{job.companySize ? `${job.companySize} employees` : '201–500 employees'}</Text>
+        </View>
+        <View style={styles.metaItem}>
+          <Clock size={12} color="#AAAAAA" strokeWidth={2} />
+          <Text style={styles.metaText}>Posted {relativeDate(job.postedAt)}</Text>
+        </View>
       </View>
 
       {/* ROW 8 — Pass + Save inline action row */}
@@ -204,7 +210,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginBottom: 14,
+    marginBottom: 10,
   },
   logoCircle: {
     width: 36, height: 36, borderRadius: 10,
@@ -233,14 +239,14 @@ const styles = StyleSheet.create({
   // Location row
   locationRow: {
     flexDirection: 'row', alignItems: 'center',
-    gap: 6, marginTop: 6, marginBottom: 14,
+    gap: 6, marginTop: 4, marginBottom: 10,
   },
   locationText: { fontSize: 14, fontWeight: '400', color: '#666666' },
 
   // Salary
   salaryRow: {
     flexDirection: 'row', alignItems: 'baseline',
-    marginTop: 0, marginBottom: 14,
+    marginTop: 0, marginBottom: 10,
   },
   salary:    { fontSize: 20, fontWeight: '700', color: '#4F46E5' },
   salaryPer: { fontSize: 14, fontWeight: '400', color: '#999999' },
@@ -250,7 +256,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap:      'nowrap',
     gap:           8,
-    marginBottom:  14,
+    marginBottom:  10,
     overflow:      'hidden',   // clip chips that would push card wider
   },
   skillChip: {
@@ -274,24 +280,28 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color:      '#666666',
     lineHeight: 22.4,
-    marginBottom: 10,
+    marginBottom: 8,
     flexShrink: 1,   // allow text to shrink within card bounds
   },
 
-  // Company size meta
+  // Company info meta row
   metaRow: {
     flexDirection: 'row', alignItems: 'center',
-    gap: 5, marginTop: 0, marginBottom: 14,
+    justifyContent: 'space-between',
+    marginTop: 0, marginBottom: 12,
   },
-  metaText: { fontSize: 13, fontWeight: '400', color: '#999999' },
+  metaItem: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+  },
+  metaText: { fontSize: 12, fontWeight: '400', color: '#AAAAAA' },
 
   // Card footer — Pass (left) + Save (right)
   cardFooter: {
     flexDirection:  'row',
     justifyContent: 'space-between',
     alignItems:     'center',
-    marginTop:      20,
-    paddingTop:     16,
+    marginTop:      12,
+    paddingTop:     12,
     borderTopWidth: 1,
     borderTopColor: '#F5F5F5',
   },

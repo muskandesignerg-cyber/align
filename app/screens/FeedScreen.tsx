@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingTop:    0,
-    paddingBottom: 180,
+    paddingBottom: 100,
     flexGrow:      1,
   },
 

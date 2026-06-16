@@ -9,35 +9,19 @@ import {
   PlusJakartaSans_600SemiBold,
   PlusJakartaSans_700Bold,
 } from '@expo-google-fonts/plus-jakarta-sans';
-import { View, ActivityIndicator, Platform, StyleSheet, TextInput, Dimensions } from 'react-native';
+import { View, ActivityIndicator, Platform, StyleSheet, TextInput } from 'react-native';
 import { RootNavigator } from './app/navigation/RootNavigator';
 import { AuthProvider } from './app/context/AuthContext';
 import { Colors } from './app/theme/colors';
 
 // ─── Global: remove focus outline on all TextInputs ───────────────────────────
 
-// On web: inject a <style> tag that kills the browser's black outline
 if (Platform.OS === 'web') {
   const style = document.createElement('style');
   style.textContent = `
     input, textarea, [contenteditable] {
       outline: none !important;
       -webkit-tap-highlight-color: transparent;
-    }
-    * {
-      -webkit-tap-highlight-color: transparent;
-    }
-    /* Phone shell — hard clip boundary for all child content */
-    [data-testid="phone-screen"], [data-phone-screen="true"] {
-      isolation: isolate;
-      overflow: hidden;
-    }
-    /* Ensure the GestureHandlerRootView inside the phone shell
-       acts as a positioning parent and never overflows */
-    [data-testid="phone-screen"] > *,
-    [data-phone-screen="true"] > * {
-      overflow: hidden;
-      position: relative;
     }
   `;
   document.head.appendChild(style);
@@ -51,24 +35,11 @@ if (Platform.OS === 'web') {
 };
 
 // ─── Web safe-area metrics ────────────────────────────────────────────────────
-// On web, react-native-safe-area-context returns 0 insets by default because
-// there's no native safe area API. We provide explicit initialMetrics so that
-// every SafeAreaView in the app receives proper padding.
-
-const windowDims = Dimensions.get('window');
-
-/** Desktop phone shell: phoneSpeaker (28px) already acts as the status bar,
- *  so only a small additional top inset is needed for visual breathing room. */
-const WEB_DESKTOP_METRICS = {
-  insets: { top: 12, bottom: 0, left: 0, right: 0 },
-  frame: { x: 0, y: 0, width: 393, height: 796 },
-};
-
-/** Mobile browser: no phone shell, so we simulate the iOS status bar height
- *  (48px) and the bottom home-indicator area (34px). */
-const WEB_MOBILE_METRICS = {
-  insets: { top: 48, bottom: 34, left: 0, right: 0 },
-  frame: { x: 0, y: 0, width: windowDims.width, height: windowDims.height },
+// On web, SafeAreaView returns 0 insets. Provide explicit metrics so every
+// screen gets correct top/bottom padding.
+const WEB_METRICS = {
+  insets: { top: 0, bottom: 0, left: 0, right: 0 },
+  frame: { x: 0, y: 0, width: 390, height: 844 },
 };
 
 export default function App() {
@@ -87,38 +58,11 @@ export default function App() {
     );
   }
 
-  // ─── Web layout ──────────────────────────────────────────────────────────────
+  // ─── Web: No phone shell — #root CSS handles the 390x844 frame ─────────────
   if (Platform.OS === 'web') {
-    const viewportWidth = Dimensions.get('window').width;
-    const isDesktop = viewportWidth >= 768;
-
-    if (isDesktop) {
-      // Desktop: centred phone-frame with dark background
-      return (
-        <View style={styles.webOuter}>
-          <View style={styles.phoneShell}>
-            <View style={styles.phoneSpeaker} />
-            <View style={styles.phoneScreen}>
-              <GestureHandlerRootView style={{ flex: 1, overflow: 'hidden' }}>
-                <SafeAreaProvider initialMetrics={WEB_DESKTOP_METRICS}>
-                  <AuthProvider>
-                    <RootNavigator />
-                  </AuthProvider>
-                </SafeAreaProvider>
-              </GestureHandlerRootView>
-            </View>
-            <View style={styles.homeIndicatorWrap}>
-              <View style={styles.homeIndicator} />
-            </View>
-          </View>
-        </View>
-      );
-    }
-
-    // Mobile browser: full-screen, no phone shell
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <SafeAreaProvider initialMetrics={WEB_MOBILE_METRICS}>
+        <SafeAreaProvider initialMetrics={WEB_METRICS}>
           <AuthProvider>
             <RootNavigator />
           </AuthProvider>
@@ -127,7 +71,7 @@ export default function App() {
     );
   }
 
-  // ─── Native layout ───────────────────────────────────────────────────────────
+  // ─── Native: full screen with system SafeArea ──────────────────────────────
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
@@ -145,51 +89,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.white,
-  },
-  webOuter: {
-    flex: 1,
-    minHeight: '100vh' as any,
-    backgroundColor: '#0F1117',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  phoneShell: {
-    width: 393,
-    height: 852,
-    backgroundColor: Colors.white,
-    borderRadius: 52,
-    overflow: 'hidden',
-    borderWidth: 10,
-    borderColor: '#1C1C1E',
-    // @ts-ignore web-only
-    boxShadow: '0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08)',
-    // @ts-ignore web-only — creates a CSS isolation boundary so no child
-    // stacking context (e.g. Animated.View with transform) escapes the shell
-    isolation: 'isolate',
-  },
-  phoneSpeaker: {
-    height: 28,
-    backgroundColor: '#1C1C1E',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  phoneScreen: {
-    flex: 1,
-    overflow: 'hidden',
-    // @ts-ignore web-only
-    isolation: 'isolate',
-  },
-  homeIndicatorWrap: {
-    height: 28,
-    backgroundColor: Colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  homeIndicator: {
-    width: 120,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: '#1C1C1E',
-    opacity: 0.2,
   },
 });
