@@ -366,7 +366,7 @@ export const JobDetailScreen: React.FC = () => {
             <>
               <View style={styles.roundBadgeRow}>
                 <View style={[styles.roundDot, { backgroundColor: '#4F46E5' }]} />
-                <Text style={styles.roundLabel}>Round 2 — Technical Assessment</Text>
+                <Text style={styles.roundLabel}>Round 2 - Technical Assessment</Text>
               </View>
               <TouchableOpacity
                 style={styles.applyBtnAssessment}
@@ -398,7 +398,7 @@ export const JobDetailScreen: React.FC = () => {
             <>
               <View style={styles.roundBadgeRow}>
                 <View style={[styles.roundDot, { backgroundColor: '#10B981' }]} />
-                <Text style={[styles.roundLabel, { color: '#10B981' }]}>Round 3 — AI Interview</Text>
+                <Text style={[styles.roundLabel, { color: '#10B981' }]}>Round 3 - AI Interview</Text>
               </View>
               <TouchableOpacity
                 style={[styles.applyBtnAssessment, { backgroundColor: '#10B981' }]}
@@ -428,7 +428,7 @@ export const JobDetailScreen: React.FC = () => {
             // HIRED
             <View style={styles.applyBtnSuccess}>
               <Ionicons name="ribbon-outline" size={18} color="#FFFFFF" />
-              <Text style={styles.applyBtnText}>🎉 Offer Received — Congratulations!</Text>
+              <Text style={styles.applyBtnText}>🎉 Offer Received - Congratulations!</Text>
             </View>
           ) : (
             // ROUND 1 — Applied
