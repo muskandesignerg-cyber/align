@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
   companyBanner: {
     width: '100%',
     height: 44,
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#EEF2FF',
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 6,
-    backgroundColor: '#1A1A2E',
+    backgroundColor: '#4F46E5',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 13,
-    color: '#FFFFFF',
+    color: '#4F46E5',
   },
 
   // LAYER 2 — MAIN CONTENT
