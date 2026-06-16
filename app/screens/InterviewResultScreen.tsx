@@ -98,7 +98,7 @@ export default function InterviewResultScreen() {
           <ArrowLeft size={20} color="#0A0A0A" strokeWidth={2} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>AI Interview Prep</Text>
-        <TouchableOpacity style={styles.settingsBtn} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.settingsBtn} activeOpacity={0.7} onPress={() => navigation.goBack()}>
           <Settings size={20} color="#666666" strokeWidth={2} />
         </TouchableOpacity>
       </View>

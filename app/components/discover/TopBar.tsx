@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image } from 'react-native';
 import { Bell, Heart, Search } from 'lucide-react-native';
+import { useAuth } from '../../context/AuthContext';
 
 /**
  * TopBar — Discover screen header.
@@ -10,6 +11,7 @@ import { Bell, Heart, Search } from 'lucide-react-native';
  * Row 4: Search bar
  */
 export default function TopBar() {
+  const { profile } = useAuth();
   return (
     <View style={styles.container}>
       {/* ROW 1 — Logo + Icons */}
@@ -37,7 +39,7 @@ export default function TopBar() {
       </View>
 
       {/* ROW 2 — Hi Muskan */}
-      <Text style={styles.greetingMain}>Hi, Muskan!</Text>
+      <Text style={styles.greetingMain}>Hi, {profile?.full_name?.split(' ')[0] ?? 'there'}!</Text>
 
       {/* ROW 3 — Subtitle */}
       <Text style={styles.greetingSub}>Find your perfect role</Text>
@@ -136,5 +138,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#0A0A0A',
     height: '100%',
+    outlineStyle: 'none' as any,
   },
 });

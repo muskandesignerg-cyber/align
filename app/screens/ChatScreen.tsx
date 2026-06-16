@@ -214,7 +214,7 @@ export default function ChatScreen({
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : Platform.OS === 'web' ? 0 : 20}
       >
         {loading ? (
           <View style={styles.loader}>
@@ -337,13 +337,4 @@ const styles = StyleSheet.create({
   sendBtnDisabled: { backgroundColor: '#C4C9F0' },
 });
 
-const webStyles = StyleSheet.create({
-  overlay: {
-    flex: 1, backgroundColor: 'rgba(10,10,30,0.55)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  phoneFrame: {
-    width: 430, maxHeight: 844, height: '90%' as any,
-    backgroundColor: '#FFFFFF', borderRadius: 20, overflow: 'hidden',
-  },
-});
+

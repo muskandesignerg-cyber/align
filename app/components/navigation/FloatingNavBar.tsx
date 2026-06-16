@@ -20,7 +20,7 @@ interface TabConfig {
 const TAB_CONFIG: Record<string, TabConfig> = {
   Feed:      { label: 'Home',      Icon: Home },
   Dashboard: { label: 'Dashboard', Icon: LayoutGrid },
-  Messages:  { label: 'Messages',  Icon: MessageCircle, badge: true },
+  Messages:  { label: 'Messages',  Icon: MessageCircle, badge: false },
   Profile:   { label: 'Profile',   Icon: User },
 };
 
@@ -171,9 +171,8 @@ const styles = StyleSheet.create({
     }),
   },
   activeLabel: {
-    fontFamily: 'Inter',
+    fontFamily: 'PlusJakartaSans_700Bold',
     fontSize:   13,
-    fontWeight: '700',
     color:      '#FFFFFF',
   },
 
@@ -190,9 +189,8 @@ const styles = StyleSheet.create({
     paddingRight:      8,
   },
   inactiveLabel: {
-    fontFamily: 'Inter',
+    fontFamily: 'PlusJakartaSans_500Medium',
     fontSize:   10,
-    fontWeight: '500',
     color:      '#BBBBBB',
   },
 

@@ -77,9 +77,7 @@ export default function JobCard({ job, cardWidth, onPassPress, onSavePress, onPr
   const empType        = (job.employmentType ?? 'Full Time');
   const initial        = displayCompany.charAt(0).toUpperCase();
 
-  const allSkills      = (job.skills && job.skills.length > 0)
-    ? job.skills
-    : ['JavaScript', 'Python', 'Java', 'React', 'Node.js', 'TypeScript', 'AWS', 'Docker', 'MongoDB'];
+  const allSkills      = job.skills ?? [];
   const visibleSkills  = allSkills.slice(0, MAX_VISIBLE_CHIPS);
   const extraCount     = Math.max(0, allSkills.length - MAX_VISIBLE_CHIPS);
   const rawDesc        = (job.description ?? '').trim();
@@ -147,7 +145,7 @@ export default function JobCard({ job, cardWidth, onPassPress, onSavePress, onPr
       {/* ROW 7 — Company size */}
       <View style={styles.metaRow}>
         <Users size={13} color="#999999" strokeWidth={2} />
-        <Text style={styles.metaText}>201–500 employees</Text>
+        <Text style={styles.metaText}>{job.companySize ? `${job.companySize} employees` : 'Team info not available'}</Text>
       </View>
 
       {/* ROW 8 — Pass + Save inline action row */}

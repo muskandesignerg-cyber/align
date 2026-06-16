@@ -23,6 +23,7 @@ import {
   Alert,
   Animated,
   Image,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -317,7 +318,7 @@ export const WelcomeScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Terms */}
         <Animated.View style={{ opacity: taglineOpacity }}>
-          <TouchableOpacity activeOpacity={0.7} onPress={() => {}}>
+          <TouchableOpacity activeOpacity={0.7} onPress={() => Linking.openURL('https://align.app/terms')}>
             <Text style={s.terms}>
               By continuing you agree to our{' '}
               <Text style={s.termsLink}>Terms</Text>

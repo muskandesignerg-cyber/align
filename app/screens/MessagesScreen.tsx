@@ -169,7 +169,7 @@ export function MessagesScreen() {
             </View>
           ) : (
             filteredChats.map((chat) => (
-            <TouchableOpacity key={chat.id} style={styles.chatRow} activeOpacity={0.7}>
+            <TouchableOpacity key={chat.id} style={styles.chatRow} activeOpacity={0.7} onPress={() => console.log('Chat tapped:', chat.company)}>
               {/* Avatar */}
               <View style={[styles.avatar, { backgroundColor: chat.avatarBg }]}>
                 <Text style={styles.avatarLetter}>{chat.avatarLetter}</Text>
@@ -237,9 +237,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontFamily: 'Inter',
+    fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 22,
-    fontWeight: '700',
     color: '#0A0A0A',
   },
 
@@ -268,10 +267,10 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontFamily: 'Inter',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 14,
-    fontWeight: '400',
     color: '#0A0A0A',
+    outlineStyle: 'none' as any,
     ...Platform.select({
       web: { outlineStyle: 'none' } as any,
     }),
@@ -303,15 +302,15 @@ const styles = StyleSheet.create({
     borderColor: '#EBEBEB',
   },
   filterText: {
-    fontFamily: 'Inter',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 12,
   },
   filterTextActive: {
-    fontWeight: '600',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     color: '#FFFFFF',
   },
   filterTextInactive: {
-    fontWeight: '500',
+    fontFamily: 'PlusJakartaSans_500Medium',
     color: '#555555',
   },
 
@@ -340,9 +339,8 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   avatarLetter: {
-    fontFamily: 'Inter',
+    fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 18,
-    fontWeight: '700',
     color: '#FFFFFF',
   },
   onlineDot: {
@@ -369,20 +367,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   companyName: {
-    fontFamily: 'Inter',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 14,
     color: '#0A0A0A',
   },
   companyUnread: {
-    fontWeight: '700',
+    fontFamily: 'PlusJakartaSans_700Bold',
   },
   companyRead: {
-    fontWeight: '600',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
   },
   timestamp: {
-    fontFamily: 'Inter',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 11,
-    fontWeight: '400',
     color: '#AAAAAA',
   },
 
@@ -392,16 +389,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   previewText: {
-    fontFamily: 'Inter',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 13,
     maxWidth: 220,
   },
   previewUnread: {
-    fontWeight: '500',
+    fontFamily: 'PlusJakartaSans_500Medium',
     color: '#333333',
   },
   previewRead: {
-    fontWeight: '400',
+    fontFamily: 'PlusJakartaSans_400Regular',
     color: '#888888',
   },
   youPrefix: {
@@ -416,9 +413,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   unreadBadgeText: {
-    fontFamily: 'Inter',
+    fontFamily: 'PlusJakartaSans_700Bold',
     fontSize: 10,
-    fontWeight: '700',
     color: '#FFFFFF',
   },
 
@@ -431,9 +427,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   jobTag: {
-    fontFamily: 'Inter',
+    fontFamily: 'PlusJakartaSans_500Medium',
     fontSize: 11,
-    fontWeight: '500',
     color: '#4F46E5',
   },
 
@@ -452,17 +447,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   archivedTitle: {
-    fontFamily: 'Inter',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 15,
-    fontWeight: '600',
     color: '#0A0A0A',
     marginTop: 16,
     textAlign: 'center',
   },
   archivedSub: {
-    fontFamily: 'Inter',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 13,
-    fontWeight: '400',
     color: '#888888',
     marginTop: 6,
     textAlign: 'center',

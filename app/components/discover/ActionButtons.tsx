@@ -97,15 +97,13 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.45 },
 
   passText: {
-    fontFamily: 'Inter',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize:   14,
-    fontWeight: '600',
     color:      '#888888',
   },
   applyText: {
-    fontFamily: 'Inter',
+    fontFamily: 'PlusJakartaSans_700Bold',
     fontSize:   14,
-    fontWeight: '700',
     color:      '#FFFFFF',
   },
 });

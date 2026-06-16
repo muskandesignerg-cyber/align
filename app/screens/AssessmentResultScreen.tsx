@@ -148,7 +148,7 @@ export default function AssessmentResultScreen() {
               </View>
             </View>
             <View style={styles.matchScoreRow}>
-              <Text style={styles.matchBefore}>72%</Text>
+              <Text style={styles.matchBefore}>{passed ? '68%' : '55%'}</Text>
               <Text style={styles.matchArrow}> ↑ </Text>
               <Text style={styles.matchAfter}>{Math.min(score + 20, 99)}%</Text>
             </View>
