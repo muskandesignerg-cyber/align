@@ -1,7 +1,6 @@
 /**
  * AssessmentIntroScreen — Round 2 intro card.
- * Shows company name, challenge details, time/questions/badge stats.
- * Matches reference image 1.
+ * Redesigned to strictly match the provided layout spec.
  */
 
 import React from 'react';
@@ -12,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ShieldCheck, Clock, List, Star, ArrowRight } from 'lucide-react-native';
+import { ShieldCheck, Clock, ListChecks, Star, ArrowRight, CheckCircle } from 'lucide-react-native';
 import { Assessment } from '../types/assessment';
 import type { MainStackParamList } from '../navigation/MainTabNavigator';
 
@@ -36,137 +35,258 @@ export default function AssessmentIntroScreen() {
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Company banner */}
-      <View style={styles.companyBanner}>
-        <View style={styles.companyIcon}>
-          <Text style={styles.companyInitial}>
+      {/* LAYER 1 — TOP NOTIFICATION BANNER */}
+      <View style={styles.topBanner}>
+        <View style={styles.companyLogoBox}>
+          <Text style={styles.companyLogoText}>
             {assessment.companyName.charAt(0).toUpperCase()}
           </Text>
         </View>
-        <Text style={styles.companyText}>
+        <Text style={styles.notificationText} numberOfLines={1}>
           <Text style={styles.companyBold}>{assessment.companyName}</Text>
           {' '}wants to verify your skills
         </Text>
       </View>
 
-      {/* Main content */}
-      <View style={styles.content}>
-
-        {/* Shield badge */}
-        <View style={styles.badgeCircle}>
-          <ShieldCheck size={40} color="#4F46E5" strokeWidth={2} />
+      {/* LAYER 2 — MAIN CONTENT */}
+      <View style={styles.mainContent}>
+        {/* ELEMENT 1 — ICON BOX */}
+        <View style={styles.iconBox}>
+          <ShieldCheck size={32} color="#4F46E5" strokeWidth={2} />
         </View>
 
-        {/* Title */}
-        <Text style={styles.title}>Technical{'\n'}Challenge</Text>
+        {/* ELEMENT 2 — HEADING */}
+        <Text style={styles.heading} numberOfLines={1}>Technical Challenge</Text>
+
+        {/* ELEMENT 3 — SUBTITLE */}
         <Text style={styles.subtitle}>
-          Answer questions to prove your skills.{'\n'}
-          No right way to think — just respond authentically.
+          Answer questions to prove your skills.{'\n'}No right way to think — just respond authentically.
         </Text>
 
-        {/* Stats row */}
+        {/* ELEMENT 4 — STATS ROW */}
         <View style={styles.statsRow}>
-          <StatCard icon={<Clock size={22} color="#4F46E5" />} value={String(assessment.timeLimit)} label="MIN" />
-          <StatCard icon={<List size={22} color="#4F46E5" />} value={String(assessment.questions.length)} label="QUESTIONS" />
-          <StatCard icon={<Star size={22} color="#4F46E5" />} value="1" label="BADGE" />
+          <View style={styles.statCard}>
+            <Clock size={18} color="#4F46E5" strokeWidth={2} style={styles.statIcon} />
+            <Text style={styles.statNumber}>{assessment.timeLimit}</Text>
+            <Text style={styles.statLabel}>MIN</Text>
+          </View>
+          <View style={styles.statCard}>
+            <ListChecks size={18} color="#4F46E5" strokeWidth={2} style={styles.statIcon} />
+            <Text style={styles.statNumber}>{assessment.questions?.length > 0 ? assessment.questions.length : 10}</Text>
+            <Text style={styles.statLabel}>QUESTIONS</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Star size={18} color="#4F46E5" strokeWidth={2} style={styles.statIcon} />
+            <Text style={styles.statNumber}>1</Text>
+            <Text style={styles.statLabel}>BADGE</Text>
+          </View>
         </View>
 
-        {/* Passing score note */}
-        <View style={styles.passingNote}>
+        {/* ELEMENT 5 — PASSING SCORE PILL */}
+        <View style={styles.passingPill}>
+          <CheckCircle size={14} color="#16A34A" strokeWidth={2} />
           <Text style={styles.passingText}>
-            Passing score: <Text style={styles.passingScore}>{assessment.passingScore}%</Text>
+            Passing score: <Text style={styles.passingScoreBold}>{assessment.passingScore}%</Text>
           </Text>
         </View>
       </View>
 
-      {/* Actions */}
-      <View style={styles.actions}>
+      {/* LAYER 3 — BOTTOM ACTIONS */}
+      <View style={styles.bottomActions}>
         <TouchableOpacity style={styles.startBtn} onPress={handleStart} activeOpacity={0.85}>
           <Text style={styles.startText}>Start Challenge</Text>
-          <ArrowRight size={18} color="#FFFFFF" strokeWidth={2.5} />
+          <ArrowRight size={18} color="#FFFFFF" strokeWidth={2} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.dismissBtn} onPress={handleDismiss} activeOpacity={0.7}>
-          <Text style={styles.dismissText}>Not now</Text>
+        <TouchableOpacity onPress={handleDismiss} activeOpacity={0.7}>
+          <Text style={styles.notNowText}>Not now</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
 
-function StatCard({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
-  return (
-    <View style={styles.statCard}>
-      {icon}
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FFFFFF' },
-
-  companyBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingHorizontal: 24, paddingVertical: 16,
-  },
-  companyIcon: {
-    width: 32, height: 32, borderRadius: 8,
-    backgroundColor: '#4F46E5', alignItems: 'center', justifyContent: 'center',
-  },
-  companyInitial: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
-  companyText: { fontSize: 13, color: '#666666', flex: 1 },
-  companyBold: { fontWeight: '700', color: '#0A0A0A' },
-
-  content: {
-    flex: 1, alignItems: 'center', justifyContent: 'center',
-    paddingHorizontal: 32,
+  root: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    // Mobile strict 390px
+    width: '100%',
+    maxWidth: 390,
+    alignSelf: 'center',
+    overflow: 'hidden',
   },
 
-  badgeCircle: {
-    width: 96, height: 96, borderRadius: 48,
-    backgroundColor: 'rgba(79,70,229,0.10)',
-    alignItems: 'center', justifyContent: 'center',
+  // LAYER 1 — TOP NOTIFICATION BANNER
+  topBanner: {
+    width: '100%',
+    height: 52,
+    backgroundColor: '#F5F5FF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8E8FF',
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  companyLogoBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: '#4F46E5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  companyLogoText: {
+    fontFamily: 'PlusJakartaSans_700Bold',
+    fontSize: 13,
+    color: '#FFFFFF',
+  },
+  notificationText: {
+    flex: 1,
+    fontFamily: 'PlusJakartaSans_400Regular',
+    fontSize: 13,
+    color: '#666666',
+  },
+  companyBold: {
+    fontFamily: 'PlusJakartaSans_700Bold',
+    color: '#0A0A0A',
+  },
+
+  // LAYER 2 — MAIN CONTENT
+  mainContent: {
+    width: '100%',
+    paddingTop: 40,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+
+  // ELEMENT 1 — ICON BOX
+  iconBox: {
+    width: 72,
+    height: 72,
+    backgroundColor: '#EEF2FF',
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 28,
   },
 
-  title: {
-    fontSize: 34, fontWeight: '800', color: '#0A0A0A',
-    textAlign: 'center', lineHeight: 40, marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 15, color: '#666666', textAlign: 'center',
-    lineHeight: 22, marginBottom: 36,
+  // ELEMENT 2 — HEADING
+  heading: {
+    fontFamily: 'PlusJakartaSans_700Bold',
+    fontSize: 28,
+    color: '#0A0A0A',
+    textAlign: 'center',
+    lineHeight: 33.6,
+    marginBottom: 12,
   },
 
+  // ELEMENT 3 — SUBTITLE
+  subtitle: {
+    fontFamily: 'PlusJakartaSans_400Regular',
+    fontSize: 15,
+    color: '#888888',
+    textAlign: 'center',
+    lineHeight: 24,
+    maxWidth: 300,
+    marginBottom: 36,
+  },
+
+  // ELEMENT 4 — STATS ROW
   statsRow: {
-    flexDirection: 'row', gap: 12, marginBottom: 20,
+    width: '100%',
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 20,
   },
   statCard: {
-    flex: 1, alignItems: 'center', gap: 6,
-    backgroundColor: '#F8F7FF',
-    borderRadius: 16, paddingVertical: 16, paddingHorizontal: 12,
+    flex: 1,
+    height: 80,
+    backgroundColor: '#F8F8FF',
+    borderWidth: 1,
+    borderColor: '#EBEBFF',
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  statValue: { fontSize: 22, fontWeight: '800', color: '#0A0A0A' },
-  statLabel: { fontSize: 10, fontWeight: '600', color: '#9CA3AF', letterSpacing: 0.8 },
-
-  passingNote: {
-    backgroundColor: 'rgba(79,70,229,0.06)',
-    borderRadius: 10, paddingHorizontal: 16, paddingVertical: 8,
+  statIcon: {
+    marginBottom: 4,
   },
-  passingText: { fontSize: 13, color: '#666666' },
-  passingScore: { fontWeight: '700', color: '#4F46E5' },
+  statNumber: {
+    fontFamily: 'PlusJakartaSans_700Bold',
+    fontSize: 20,
+    color: '#0A0A0A',
+  },
+  statLabel: {
+    fontFamily: 'PlusJakartaSans_600SemiBold',
+    fontSize: 10,
+    color: '#AAAAAA',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
 
-  actions: { paddingHorizontal: 24, paddingBottom: 16, gap: 12 },
+  // ELEMENT 5 — PASSING SCORE PILL
+  passingPill: {
+    height: 36,
+    paddingHorizontal: 16,
+    backgroundColor: '#F0FFF4',
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    borderRadius: 999,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  passingText: {
+    fontFamily: 'PlusJakartaSans_400Regular',
+    fontSize: 13,
+    color: '#444444',
+  },
+  passingScoreBold: {
+    fontFamily: 'PlusJakartaSans_700Bold',
+    fontSize: 13,
+    color: '#16A34A',
+  },
+
+  // LAYER 3 — BOTTOM ACTIONS
+  bottomActions: {
+    width: '100%',
+    position: 'absolute',
+    bottom: 40,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    gap: 14,
+  },
   startBtn: {
-    height: 56, backgroundColor: '#4F46E5', borderRadius: 16,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+    width: '100%',
+    height: 52,
+    backgroundColor: '#4F46E5',
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     ...Platform.select({
-      web: { boxShadow: '0 4px 20px rgba(79,70,229,0.35)' } as any,
-      default: { shadowColor: '#4F46E5', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 16, elevation: 8 },
+      web: { boxShadow: '0 4px 16px rgba(79,70,229,0.28)' } as any,
+      default: {
+        shadowColor: '#4F46E5',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.28,
+        shadowRadius: 16,
+        elevation: 6,
+      },
     }),
   },
-  startText: { fontSize: 17, fontWeight: '700', color: '#FFFFFF' },
-  dismissBtn: { height: 44, alignItems: 'center', justifyContent: 'center' },
-  dismissText: { fontSize: 15, color: '#9CA3AF', fontWeight: '500' },
+  startText: {
+    fontFamily: 'PlusJakartaSans_700Bold',
+    fontSize: 15,
+    color: '#FFFFFF',
+  },
+  notNowText: {
+    fontFamily: 'PlusJakartaSans_500Medium',
+    fontSize: 14,
+    color: '#AAAAAA',
+    textAlign: 'center',
+  },
 });
