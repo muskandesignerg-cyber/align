@@ -163,8 +163,9 @@ export default function JobCard({ job, cardWidth, onPassPress, onSavePress, onPr
             size={14}
             color="#4F46E5"
             strokeWidth={2}
+            fill={isSaved ? '#4F46E5' : 'transparent'}
           />
-          <Text style={[styles.saveLinkText, isSaved && styles.savedLinkText]}>
+          <Text style={styles.saveLinkText}>
             {isSaved ? 'Saved' : 'Save'}
           </Text>
         </TouchableOpacity>
