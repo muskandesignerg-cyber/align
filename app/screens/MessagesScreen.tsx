@@ -214,7 +214,8 @@ export function MessagesScreen() {
 
               </View>
             </TouchableOpacity>
-          ))}
+          ))
+          )}
         </Animated.View>
 
       </ScrollView>

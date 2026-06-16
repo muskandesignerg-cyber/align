@@ -72,14 +72,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         setProfile(p);
       } else {
         // Fallback upsert with timeout
-        const { data } = await timeout(
+        const { data } = await (timeout(
           supabase
             .from('profiles')
             .upsert({ id: userId, onboarding_complete: false }, { onConflict: 'id' })
             .select()
-            .single(),
+            .single() as unknown as Promise<{ data: unknown }>,
           3000
-        ).catch(() => ({ data: null }));
+        ).catch(() => ({ data: null }))) as { data: unknown };
 
         if (data) setProfile(data as any);
         else setProfile(null);

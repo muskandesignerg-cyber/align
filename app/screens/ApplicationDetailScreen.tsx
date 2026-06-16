@@ -14,7 +14,7 @@ import { Colors } from '../theme/colors';
 import { FontFamily, FontSize } from '../theme/typography';
 import { Spacing, BorderRadius } from '../theme/spacing';
 import { Application, getStatusColors } from '../types/applications';
-import ProgressTracker from '../components/dashboard/ProgressTracker';
+import { ProgressTracker } from '../components/dashboard/ProgressTracker';
 import TimelineView from '../components/dashboard/TimelineView';
 import type { MainStackParamList } from '../navigation/MainTabNavigator';
 import { useDashboard } from '../context/DashboardContext';

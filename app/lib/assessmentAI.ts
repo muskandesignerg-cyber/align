@@ -337,7 +337,7 @@ const FALLBACK_INTERVIEW_QUESTIONS: Record<string, InterviewQuestion[]> = {
     { id: uid(), text: 'Tell me about a time you had to quickly learn something to solve a problem.', topic: 'Problem Solving', followUp: 'How did you structure your learning?' },
     { id: uid(), text: 'What\'s the most impactful piece of feedback you\'ve received?', topic: 'Self Awareness', followUp: 'How did you apply it?' },
     { id: uid(), text: 'How do you balance speed of delivery with quality?', topic: 'Engineering', followUp: 'Give me a concrete example.' },
-    { id: uid(), text: 'What questions do you have for us about the role or company?', topic: 'Engagement', followUp: null },
+    { id: uid(), text: 'What questions do you have for us about the role or company?', topic: 'Engagement', followUp: undefined },
   ],
 };
 
