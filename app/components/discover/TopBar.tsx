@@ -1,14 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Bell, Heart } from 'lucide-react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { Bell, Heart, Search } from 'lucide-react-native';
 import { useAuth } from '../../context/AuthContext';
 
 /**
  * TopBar — Discover screen header.
- * Left:  "Hi, Muskan!" greeting + subtitle
- * Right: Bell (with red dot) + Heart icon
- *
- * No logo, no search bar — matches the original design spec.
+ * Matches new design:
+ * Row 1: Logo + Icons
+ * Row 2: Greeting + Subtitle
+ * Row 3: Search Bar
  */
 export default function TopBar() {
   const { profile } = useAuth();
@@ -19,27 +19,38 @@ export default function TopBar() {
 
   return (
     <View style={styles.container}>
-      {/* Single header row — greeting left, icons right */}
-      <View style={styles.headerRow}>
-        {/* LEFT — Greeting */}
-        <View style={styles.greetingCol}>
-          <Text style={styles.greetingMain}>Hi, {firstName}!</Text>
-          <Text style={styles.greetingSub}>Find your perfect role</Text>
-        </View>
-
-        {/* RIGHT — Icons */}
+      {/* ROW 1: Logo & Icons */}
+      <View style={styles.topRow}>
+        <Image
+          source={require('../../../assets/images/align-logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
         <View style={styles.rightIcons}>
           <TouchableOpacity activeOpacity={0.7}>
             <View style={styles.bellWrapper}>
-              <Bell size={22} color="#0A0A0A" strokeWidth={2} />
+              <Bell size={24} color="#0A0A0A" strokeWidth={2} />
               <View style={styles.notifDot} />
             </View>
           </TouchableOpacity>
-
           <TouchableOpacity activeOpacity={0.7}>
-            <Heart size={22} color="#0A0A0A" strokeWidth={2} />
+            <Heart size={24} color="#0A0A0A" strokeWidth={2} />
           </TouchableOpacity>
         </View>
+      </View>
+
+      {/* ROW 2: Greeting */}
+      <View style={styles.greetingRow}>
+        <Text style={styles.greetingMain}>Hi, {firstName}!</Text>
+        <Text style={styles.greetingSub}>Find your perfect role</Text>
+      </View>
+
+      {/* ROW 3: Search Bar */}
+      <View style={styles.searchRow}>
+        <TouchableOpacity style={styles.searchBox} activeOpacity={0.8}>
+          <Search size={20} color="#666666" strokeWidth={2.5} />
+          <Text style={styles.searchText}>Search roles, skills or companies</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -55,34 +66,18 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F0F0F0',
   },
 
-  // Single header row
-  headerRow: {
+  // ROW 1
+  topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    minHeight: 48,
+    marginBottom: 24,
   },
-
-  // Left column — greeting text
-  greetingCol: {
-    flex: 1,
+  logo: {
+    height: 24,
+    width: 80,
   },
-  greetingMain: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#0A0A0A',
-    fontFamily: 'PlusJakartaSans_700Bold',
-  },
-  greetingSub: {
-    fontSize: 13,
-    fontWeight: '400',
-    color: '#999999',
-    marginTop: 2,
-    fontFamily: 'PlusJakartaSans_400Regular',
-  },
-
-  // Right icons cluster
   rightIcons: {
     flexDirection: 'row',
     gap: 16,
@@ -90,18 +85,54 @@ const styles = StyleSheet.create({
   },
   bellWrapper: {
     position: 'relative',
-    width: 22,
-    height: 22,
+    width: 24,
+    height: 24,
   },
   notifDot: {
     position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#EF4444',
-    borderWidth: 1.5,
+    top: -1,
+    right: 1,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#FF3B30',
+    borderWidth: 2,
     borderColor: '#FFFFFF',
+  },
+
+  // ROW 2
+  greetingRow: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  greetingMain: {
+    fontSize: 26,
+    fontFamily: 'PlusJakartaSans_700Bold',
+    color: '#0A0A0A',
+    marginBottom: 4,
+  },
+  greetingSub: {
+    fontSize: 15,
+    fontFamily: 'PlusJakartaSans_400Regular',
+    color: '#666666',
+  },
+
+  // ROW 3
+  searchRow: {
+    paddingHorizontal: 20,
+  },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F7',
+    borderRadius: 14,
+    height: 48,
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  searchText: {
+    fontSize: 15,
+    fontFamily: 'PlusJakartaSans_400Regular',
+    color: '#9CA3AF',
   },
 });
