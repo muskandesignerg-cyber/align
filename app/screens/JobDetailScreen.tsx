@@ -16,6 +16,84 @@ import { Job } from '../types/jobs';
 import { useDiscover } from '../context/DiscoverContext';
 import type { Assessment, InterviewSession } from '../types/assessment';
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatSalary(
+  min?: number | null,
+  max?: number | null,
+  currency: string = 'INR',
+): string {
+  const m = min != null ? Number(min) : 0;
+  const x = max != null ? Number(max) : 0;
+  const MIN_VALID = 10_000;
+
+  if (currency === 'INR') {
+    const f = (v: number) =>
+      v >= 100_000 ? `₹${Math.round(v / 100_000)}L` : `₹${Math.round(v / 1_000)}K`;
+    if (m >= MIN_VALID && x >= MIN_VALID) return `${f(m)} – ${f(x)} / yr`;
+    if (m >= MIN_VALID) return `${f(m)}+ / yr`;
+    if (x >= MIN_VALID) return `Up to ${f(x)} / yr`;
+    return 'Competitive';
+  }
+  const sym = currency === 'GBP' ? '£' : '$';
+  const f = (v: number) => `${sym}${Math.round(v / 1_000)}K`;
+  if (m >= MIN_VALID && x >= MIN_VALID) return `${f(m)} – ${f(x)} / yr`;
+  if (m >= MIN_VALID) return `${f(m)}+ / yr`;
+  if (x >= MIN_VALID) return `Up to ${f(x)} / yr`;
+  return 'Competitive';
+}
+
+function formatTitle(raw: string): string {
+  if (!raw?.trim()) return 'Job Role';
+  const titled = raw.trim().split(' ').map(w => {
+    if (w.includes('/')) return w.split('/').map(p => p.toUpperCase()).join('/');
+    return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+  }).join(' ');
+  return titled;
+}
+
+const WORK_MODES = new Set(['remote', 'hybrid', 'on-site', 'onsite', 'wfh', 'wfo', 'flexible']);
+const isWorkMode = (s?: string | null) => WORK_MODES.has((s ?? '').toLowerCase().trim());
+
+function relativeDate(iso?: string): string {
+  if (!iso) return 'Today';
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 30) return `${days}d ago`;
+  return `${Math.floor(days / 30)}mo ago`;
+}
+
+function buildFitReasons(job: Job): string[] {
+  const reasons: string[] = [];
+  const skills = job.skills ?? [];
+  if (skills.length > 0) reasons.push(`You know ${skills[0]}, they need ${skills[0]}`);
+  if (skills.length > 1) {
+    const extra = skills.slice(1, 3).join(' & ');
+    reasons.push(`${extra} match their stack`);
+  }
+  const wm = job.workModel ?? '';
+  if (wm === 'Remote')   reasons.push('Fully remote, matches your remote preference');
+  else if (wm === 'Hybrid') reasons.push('Hybrid work aligns with your preference');
+  else if (wm === 'On-site') reasons.push('On-site opportunity near your area');
+  if (reasons.length === 0) {
+    return ['Your profile aligns with this role', 'Skills match their requirements'];
+  }
+  return reasons.slice(0, 3);
+}
+
+function buildDescription(job: Job, title: string, company: string): string {
+  const raw = (job.description ?? '').trim();
+  if (raw.length > 30) return raw;
+  return (
+    `We are looking for a ${title} to join our team at ${company}. ` +
+    `You will work on impactful projects, collaborate with talented colleagues, ` +
+    `and grow your career in a fast-paced, innovative environment.`
+  );
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
 type NavProp    = NativeStackNavigationProp<MainStackParamList>;
 type RouteParam = RouteProp<MainStackParamList, 'JobDetail'>;
 
@@ -25,6 +103,7 @@ export const JobDetailScreen: React.FC = () => {
   const job: Partial<Job> = route.params?.job ?? {};
   const fromDashboard     = route.params?.fromDashboard ?? false;
   const appStatus         = route.params?.applicationStatus ?? 'Applied';
+  const postedDate        = route.params?.postedDate ?? 'Applied Today';
   const { applyToJob, isJobApplied } = useDiscover();
 
   type PipelineRound = 'applied' | 'assessment' | 'interview' | 'hired';
@@ -46,6 +125,34 @@ export const JobDetailScreen: React.FC = () => {
     applyToJob(job.id);
     setIsLoading(false);
   };
+
+  // ── Derived display values ──────────────────────────────────────────────
+  const displayTitle   = formatTitle(job.roleTitle ?? '');
+  const displayCompany = job.companyName ?? 'Company';
+  const displayCity    = isWorkMode(job.location) ? 'Remote' : (job.location ?? 'Remote');
+  const displayWork    = job.workModel ?? 'Hybrid';
+  const displaySalary  = formatSalary(job.salaryMin, job.salaryMax, job.currency ?? 'INR');
+  const matchScore     = (job.matchScore && job.matchScore > 0) ? job.matchScore : 91;
+  const initial        = displayCompany.charAt(0).toUpperCase();
+  const department     = job.industry ?? 'Product Design';
+  const empType        = (job.employmentType ?? 'FULL TIME').replace(/_/g, ' ').toUpperCase();
+  const skills         = (job.skills && job.skills.length > 0) ? job.skills : ['Figma', 'Adobe XD', 'Sketch', 'JavaScript', 'HTML/CSS', 'React', 'User Research', 'Interaction Design'];
+  const fitReasons     = buildFitReasons(job as Job);
+  const displayDesc    = buildDescription(job as Job, displayTitle, displayCompany);
+  const companyDesc    = job.companyDescription
+    ?? `A product and tech company building tools for students and early professionals. Founded in 2018.`;
+  const companySize    = job.companySize ?? '201–500';
+  const postedStr      = relativeDate(job.postedAt);
+
+  // Match badge color logic
+  const matchBadge = matchScore >= 80
+    ? { bg: '#EEF2FF', text: '#4F46E5', border: '#C7D2FE' }
+    : matchScore >= 60
+    ? { bg: '#FFF8E6', text: '#F57C00', border: '#FBBF24' }
+    : { bg: '#FFF0F0', text: '#EF4444', border: '#FCA5A5' };
+
+  // For skills diff: top half "have" (even indices), rest "missing"
+  const candidateSkillsHave = new Set(skills.slice(0, Math.ceil(skills.length / 2)));
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
@@ -69,7 +176,7 @@ export const JobDetailScreen: React.FC = () => {
           <View style={styles.statusStrip}>
             <FlaskConical size={15} color="#4F46E5" strokeWidth={2} />
             <Text style={styles.statusText} numberOfLines={1}>
-              You're selected for Round 2 · Applied 2 days ago
+              You're selected for Round 2 · {postedDate}
             </Text>
           </View>
         ) : null}
@@ -85,106 +192,114 @@ export const JobDetailScreen: React.FC = () => {
         <View style={styles.companyRow}>
           <View style={styles.companyLeft}>
             <View style={styles.companyLogoBox}>
-              <Text style={styles.companyLogoLetter}>E</Text>
+              <Text style={styles.companyLogoLetter}>{initial}</Text>
             </View>
             <View style={styles.companyInfoBox}>
-              <Text style={styles.companyNameText}>Exposys Data Labs</Text>
+              <Text style={styles.companyNameText}>{displayCompany}</Text>
               <View style={styles.departmentBadge}>
-                <Text style={styles.departmentText}>Product Design</Text>
+                <Text style={styles.departmentText}>{department}</Text>
               </View>
             </View>
           </View>
-          <View style={styles.matchBadge}>
-            <Star size={12} color="#4F46E5" fill="#4F46E5" />
-            <Text style={styles.matchBadgeText}>91% Match</Text>
+          <View style={[styles.matchBadge, { backgroundColor: matchBadge.bg, borderColor: matchBadge.border }]}>
+            <Star size={12} color={matchBadge.text} fill={matchBadge.text} />
+            <Text style={[styles.matchBadgeText, { color: matchBadge.text }]}>{matchScore}% Match</Text>
           </View>
         </View>
 
         {/* SECTION 2 — JOB TITLE */}
-        <Text style={styles.jobTitle}>UI/UX Designer</Text>
+        <Text style={styles.jobTitle}>{displayTitle}</Text>
 
         {/* SECTION 3 — JOB META CHIPS ROW */}
         <View style={styles.chipsRow}>
-          <View style={styles.metaChip}>
-            <MapPin size={13} color="#888888" strokeWidth={2} />
-            <Text style={styles.metaChipText}>Bangalore</Text>
-          </View>
+          {displayCity !== 'Remote' && (
+            <View style={styles.metaChip}>
+              <MapPin size={13} color="#888888" strokeWidth={2} />
+              <Text style={styles.metaChipText}>{displayCity}</Text>
+            </View>
+          )}
           <View style={styles.metaChip}>
             <Briefcase size={13} color="#888888" strokeWidth={2} />
-            <Text style={styles.metaChipText}>Hybrid</Text>
+            <Text style={styles.metaChipText}>{displayWork}</Text>
           </View>
           <View style={styles.metaChip}>
             <Clock size={13} color="#888888" strokeWidth={2} />
-            <Text style={styles.metaChipText}>FULL TIME</Text>
+            <Text style={styles.metaChipText}>{empType}</Text>
           </View>
-          <View style={styles.metaChip}>
-            <Banknote size={13} color="#888888" strokeWidth={2} />
-            <Text style={styles.metaChipText}>₹6L – ₹14L / yr</Text>
-          </View>
+          {displaySalary !== 'Competitive' && (
+            <View style={styles.metaChip}>
+              <Banknote size={13} color="#888888" strokeWidth={2} />
+              <Text style={styles.metaChipText}>{displaySalary}</Text>
+            </View>
+          )}
         </View>
 
         {/* SECTION 4 — WHY YOU'RE A FIT CARD */}
-        <View style={styles.fitCard}>
-          <View style={styles.fitHeaderRow}>
-            <Sparkles size={16} color="#4F46E5" strokeWidth={2} />
-            <Text style={styles.fitHeaderText}>Why you're a fit</Text>
-          </View>
+        {fitReasons.length > 0 && (
+          <View style={styles.fitCard}>
+            <View style={styles.fitHeaderRow}>
+              <Sparkles size={16} color="#4F46E5" strokeWidth={2} />
+              <Text style={styles.fitHeaderText}>Why you're a fit</Text>
+            </View>
 
-          <View style={styles.fitPointRow}>
-            <CheckCircle2 size={16} color="#22C55E" strokeWidth={2} />
-            <Text style={styles.fitPointText}>You know Figma, they need Figma</Text>
+            {fitReasons.map((reason, i) => (
+              <View key={i} style={styles.fitPointRow}>
+                <CheckCircle2 size={16} color="#22C55E" strokeWidth={2} />
+                <Text style={styles.fitPointText}>{reason}</Text>
+              </View>
+            ))}
           </View>
-          <View style={styles.fitPointRow}>
-            <CheckCircle2 size={16} color="#22C55E" strokeWidth={2} />
-            <Text style={styles.fitPointText}>Adobe XD & Sketch match their stack</Text>
-          </View>
-          <View style={styles.fitPointRow}>
-            <CheckCircle2 size={16} color="#22C55E" strokeWidth={2} />
-            <Text style={styles.fitPointText}>Hybrid work aligns with your preference</Text>
-          </View>
-        </View>
+        )}
 
         {/* SECTION 5 — ABOUT THE ROLE */}
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionHeading}>About the Role</Text>
           <Text style={styles.bodyText}>
-            We are looking for a talented UI/UX Designer to create intuitive digital experiences across our product suite.
+            {displayDesc}
           </Text>
         </View>
 
         {/* SECTION 6 — SKILLS REQUIRED */}
-        <View style={styles.sectionContainer}>
-          <Text style={styles.sectionHeadingSkills}>Skills Required</Text>
-          <View style={styles.skillsContainer}>
-            {['Figma', 'Adobe XD', 'Sketch', 'JavaScript'].map((skill, i) => (
-              <View key={`matched-${i}`} style={styles.matchedSkillChip}>
-                <Check size={12} color="#4F46E5" strokeWidth={2.5} />
-                <Text style={styles.matchedSkillText}>{skill}</Text>
-              </View>
-            ))}
-            {['HTML/CSS', 'React', 'User Research', 'Interaction Design'].map((skill, i) => (
-              <View key={`unmatched-${i}`} style={styles.unmatchedSkillChip}>
-                <Text style={styles.unmatchedSkillText}>{skill}</Text>
-              </View>
-            ))}
+        {skills.length > 0 && (
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionHeadingSkills}>Skills Required</Text>
+            <View style={styles.skillsContainer}>
+              {skills.map((skill, i) => {
+                const hasIt = candidateSkillsHave.has(skill);
+                if (hasIt) {
+                  return (
+                    <View key={`matched-${i}`} style={styles.matchedSkillChip}>
+                      <Check size={12} color="#4F46E5" strokeWidth={2.5} />
+                      <Text style={styles.matchedSkillText}>{skill}</Text>
+                    </View>
+                  );
+                } else {
+                  return (
+                    <View key={`unmatched-${i}`} style={styles.unmatchedSkillChip}>
+                      <Text style={styles.unmatchedSkillText}>{skill}</Text>
+                    </View>
+                  );
+                }
+              })}
+            </View>
           </View>
-        </View>
+        )}
 
         {/* SECTION 7 — ABOUT EXPOSYS DATA LABS */}
         <View style={styles.sectionContainerLast}>
-          <Text style={styles.sectionHeading}>About Exposys Data Labs</Text>
+          <Text style={styles.sectionHeading}>About {displayCompany}</Text>
           <View style={styles.aboutCard}>
             <Text style={styles.aboutCardDesc}>
-              A product and tech company building tools for students and early professionals. Founded in 2018.
+              {companyDesc}
             </Text>
             <View style={styles.aboutCardMeta}>
               <View style={styles.metaGroup}>
                 <Users size={13} color="#AAAAAA" strokeWidth={2} />
-                <Text style={styles.metaSmallText}>201–500 employees</Text>
+                <Text style={styles.metaSmallText}>{companySize} employees</Text>
               </View>
               <View style={styles.metaGroup}>
                 <Clock size={13} color="#AAAAAA" strokeWidth={2} />
-                <Text style={styles.metaSmallText}>Posted Today</Text>
+                <Text style={styles.metaSmallText}>Posted {postedStr}</Text>
               </View>
             </View>
           </View>
@@ -210,9 +325,9 @@ export const JobDetailScreen: React.FC = () => {
                     id: `assess-${job.id ?? 'demo'}`,
                     jobId: job.id ?? 'demo',
                     candidateId: 'me',
-                    companyName: 'Exposys Data Labs',
-                    roleTitle: 'UI/UX Designer',
-                    skills: ['Figma', 'Adobe XD', 'Sketch', 'JavaScript'],
+                    companyName: displayCompany,
+                    roleTitle: displayTitle,
+                    skills: skills,
                     questions: [],
                     timeLimit: 30,
                     passingScore: 70,
@@ -242,8 +357,8 @@ export const JobDetailScreen: React.FC = () => {
                     id: `session-${job.id ?? 'demo'}`,
                     jobId: job.id ?? 'demo',
                     candidateId: 'me',
-                    companyName: 'Exposys Data Labs',
-                    roleTitle: 'UI/UX Designer',
+                    companyName: displayCompany,
+                    roleTitle: displayTitle,
                     focus: 'Technical',
                     questions: [],
                     timeLimit: 20,
@@ -334,7 +449,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   navTitle: {
-    
     fontSize: 17,
     fontWeight: '600',
     color: '#0A0A0A',
@@ -353,7 +467,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   statusText: {
-    
     fontSize: 13,
     fontWeight: '400',
     color: '#4F46E5',
@@ -390,7 +503,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   companyLogoLetter: {
-    
     fontSize: 20,
     fontWeight: '700',
     color: '#FFFFFF',
@@ -400,7 +512,6 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   companyNameText: {
-    
     fontSize: 16,
     fontWeight: '700',
     color: '#0A0A0A',
@@ -413,15 +524,12 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   departmentText: {
-    
     fontSize: 11,
     fontWeight: '500',
     color: '#555555',
   },
   matchBadge: {
-    backgroundColor: '#EEF2FF',
     borderWidth: 1,
-    borderColor: '#C7D2FE',
     borderRadius: 999,
     paddingVertical: 6,
     paddingHorizontal: 14,
@@ -430,15 +538,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   matchBadgeText: {
-    
     fontSize: 12,
     fontWeight: '600',
-    color: '#4F46E5',
   },
 
   // SECTION 2 — JOB TITLE
   jobTitle: {
-    
     fontSize: 28,
     fontWeight: '700',
     color: '#0A0A0A',
@@ -465,7 +570,6 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   metaChipText: {
-    
     fontSize: 13,
     fontWeight: '400',
     color: '#444444',
@@ -488,7 +592,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   fitHeaderText: {
-    
     fontSize: 15,
     fontWeight: '600',
     color: '#4F46E5',
@@ -500,7 +603,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   fitPointText: {
-    
     fontSize: 14,
     fontWeight: '400',
     color: '#333333',
@@ -515,21 +617,18 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionHeading: {
-    
     fontSize: 18,
     fontWeight: '700',
     color: '#0A0A0A',
     marginBottom: 8,
   },
   sectionHeadingSkills: {
-    
     fontSize: 18,
     fontWeight: '700',
     color: '#0A0A0A',
     marginBottom: 12, // specific from spec
   },
   bodyText: {
-    
     fontSize: 14,
     fontWeight: '400',
     color: '#555555',
@@ -554,7 +653,6 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   matchedSkillText: {
-    
     fontSize: 13,
     fontWeight: '500',
     color: '#4F46E5',
@@ -569,20 +667,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   unmatchedSkillText: {
-    
     fontSize: 13,
     fontWeight: '500',
     color: '#666666',
   },
 
-  // SECTION 7 — ABOUT EXPOSYS DATA LABS
+  // SECTION 7 — ABOUT COMPANY
   aboutCard: {
     backgroundColor: '#F7F7F7',
     borderRadius: 14,
     padding: 16,
   },
   aboutCardDesc: {
-    
     fontSize: 14,
     fontWeight: '400',
     color: '#555555',
@@ -600,7 +696,6 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   metaSmallText: {
-    
     fontSize: 12,
     fontWeight: '400',
     color: '#AAAAAA',
@@ -649,13 +744,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   applyBtnTextWhite: {
-    
     fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
   },
   applySubText: {
-    
     fontSize: 12,
     fontWeight: '400',
     color: '#9CA3AF',
@@ -673,7 +766,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   roundLabel: {
-    
     fontSize: 14,
     fontWeight: '600',
     color: '#4F46E5',
