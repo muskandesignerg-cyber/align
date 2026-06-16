@@ -11,6 +11,7 @@ import {
   Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { Search, PenSquare, ArchiveX } from 'lucide-react-native';
 
 const FILTERS = ['All', 'Unread', 'Employers', 'Archived'];
@@ -80,6 +81,7 @@ const MOCK_CHATS = [
 ];
 
 export function MessagesScreen() {
+  const navigation = useNavigation();
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
   
@@ -169,7 +171,7 @@ export function MessagesScreen() {
             </View>
           ) : (
             filteredChats.map((chat) => (
-            <TouchableOpacity key={chat.id} style={styles.chatRow} activeOpacity={0.7} onPress={() => console.log('Chat tapped:', chat.company)}>
+            <TouchableOpacity key={chat.id} style={styles.chatRow} activeOpacity={0.7} onPress={() => (navigation as any).navigate('Chat', { chatId: chat.id, company: chat.company })}>
               {/* Avatar */}
               <View style={[styles.avatar, { backgroundColor: chat.avatarBg }]}>
                 <Text style={styles.avatarLetter}>{chat.avatarLetter}</Text>
