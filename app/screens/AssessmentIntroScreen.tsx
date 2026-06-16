@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ShieldCheck, Clock, ListChecks, Star, ArrowRight, CheckCircle } from 'lucide-react-native';
+import { ShieldCheck, Clock, ListChecks, Star, ArrowRight, CheckCircle, ArrowLeft, Heart } from 'lucide-react-native';
 import { Assessment } from '../types/assessment';
 import type { MainStackParamList } from '../navigation/MainTabNavigator';
 
@@ -35,16 +35,26 @@ export default function AssessmentIntroScreen() {
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* LAYER 1 — TOP NOTIFICATION BANNER */}
-      <View style={styles.topBanner}>
+      {/* ROW 1 — NAV BAR */}
+      <View style={styles.navBar}>
+        <TouchableOpacity onPress={handleDismiss}>
+          <ArrowLeft size={22} color="#0A0A0A" strokeWidth={2} />
+        </TouchableOpacity>
+        <Text style={styles.navTitle}>Start Assessment</Text>
+        <TouchableOpacity>
+          <Heart size={22} color="#0A0A0A" strokeWidth={2} />
+        </TouchableOpacity>
+      </View>
+
+      {/* ROW 2 — COMPANY BANNER */}
+      <View style={styles.companyBanner}>
         <View style={styles.companyLogoBox}>
           <Text style={styles.companyLogoText}>
             {assessment.companyName.charAt(0).toUpperCase()}
           </Text>
         </View>
         <Text style={styles.notificationText} numberOfLines={1}>
-          <Text style={styles.companyBold}>{assessment.companyName}</Text>
-          {' '}wants to verify your skills
+          {assessment.companyName} wants to verify your skills
         </Text>
       </View>
 
@@ -116,13 +126,34 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
-  // LAYER 1 — TOP NOTIFICATION BANNER
-  topBanner: {
+  // ROW 1 — NAV BAR
+  navBar: {
     width: '100%',
     height: 52,
-    backgroundColor: '#F5F5FF',
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#E8E8FF',
+    borderBottomColor: '#F0F0F0',
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  navTitle: {
+    fontFamily: 'PlusJakartaSans_600SemiBold',
+    fontSize: 17,
+    color: '#0A0A0A',
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    zIndex: -1,
+  },
+
+  // ROW 2 — COMPANY BANNER
+  companyBanner: {
+    width: '100%',
+    height: 44,
+    backgroundColor: '#4F46E5',
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -131,8 +162,8 @@ const styles = StyleSheet.create({
   companyLogoBox: {
     width: 28,
     height: 28,
-    borderRadius: 8,
-    backgroundColor: '#4F46E5',
+    borderRadius: 6,
+    backgroundColor: '#1A1A2E',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -145,11 +176,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 13,
-    color: '#666666',
-  },
-  companyBold: {
-    fontFamily: 'PlusJakartaSans_700Bold',
-    color: '#0A0A0A',
+    color: '#FFFFFF',
   },
 
   // LAYER 2 — MAIN CONTENT
