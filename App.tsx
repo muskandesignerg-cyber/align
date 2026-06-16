@@ -9,13 +9,12 @@ import {
   PlusJakartaSans_600SemiBold,
   PlusJakartaSans_700Bold,
 } from '@expo-google-fonts/plus-jakarta-sans';
-import { View, ActivityIndicator, Platform, StyleSheet, TextInput } from 'react-native';
+import { View, ActivityIndicator, Platform, StyleSheet, TextInput, Dimensions } from 'react-native';
 import { RootNavigator } from './app/navigation/RootNavigator';
 import { AuthProvider } from './app/context/AuthContext';
 import { Colors } from './app/theme/colors';
 
-// ─── Global: remove focus outline on all TextInputs ───────────────────────────
-
+// Remove focus outline on web
 if (Platform.OS === 'web') {
   const style = document.createElement('style');
   style.textContent = `
@@ -27,7 +26,6 @@ if (Platform.OS === 'web') {
   document.head.appendChild(style);
 }
 
-// On all platforms: suppress React Native's own outline/selection ring
 (TextInput as any).defaultProps = {
   ...(TextInput as any).defaultProps,
   selectionColor: '#4C59D7',
@@ -35,11 +33,12 @@ if (Platform.OS === 'web') {
 };
 
 // ─── Web safe-area metrics ────────────────────────────────────────────────────
-// On web, SafeAreaView returns 0 insets. Provide explicit metrics so every
-// screen gets correct top/bottom padding.
+// On web, SafeAreaView always returns 0. We provide real insets so the header
+// and nav bar are never clipped on any mobile browser.
+const dims = Dimensions.get('window');
 const WEB_METRICS = {
-  insets: { top: 0, bottom: 0, left: 0, right: 0 },
-  frame: { x: 0, y: 0, width: 390, height: 844 },
+  insets: { top: 44, bottom: 34, left: 0, right: 0 },
+  frame: { x: 0, y: 0, width: dims.width, height: dims.height },
 };
 
 export default function App() {
@@ -58,7 +57,7 @@ export default function App() {
     );
   }
 
-  // ─── Web: No phone shell — #root CSS handles the 390x844 frame ─────────────
+  // Web: full-screen, no phone shell wrapper
   if (Platform.OS === 'web') {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
@@ -71,7 +70,7 @@ export default function App() {
     );
   }
 
-  // ─── Native: full screen with system SafeArea ──────────────────────────────
+  // Native: let the OS provide real safe-area insets
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
