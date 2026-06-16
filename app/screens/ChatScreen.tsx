@@ -272,6 +272,7 @@ export default function ChatScreen({
   );
 
   if (Platform.OS === 'web') {
+    if (!visible) return null;
     return (
       <View style={[StyleSheet.absoluteFill, { zIndex: 999 }]}>
         {inner}

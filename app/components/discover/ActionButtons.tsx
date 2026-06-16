@@ -41,6 +41,7 @@ export default function ActionButtons({ onPass, onApply, disabled = false }: Act
 }
 
 const styles = StyleSheet.create({
+  container: {
     position:          'absolute',
     bottom:            80,
     left:              0,

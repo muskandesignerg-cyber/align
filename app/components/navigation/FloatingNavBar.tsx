@@ -92,7 +92,7 @@ export default function FloatingNavBar({ state, navigation }: BottomTabBarProps)
                 activeOpacity={0.7}
               >
                 <View style={styles.iconWrap}>
-                  <config.Icon size={20} color="#C4C4C4" strokeWidth={2} />
+                  <config.Icon size={22} color="#BBBBBB" strokeWidth={2} />
                   {config.badge && <View style={styles.badge} />}
                 </View>
                 <Text style={styles.inactiveLabel}>{config.label}</Text>
@@ -109,21 +109,20 @@ const styles = StyleSheet.create({
   // Transparent wrapper to position the floating navbar
   wrapper: {
     position:   'absolute',
-    bottom:     0,
+    bottom:     20,
     left:       0,
     width:      '100%',
-    height:     96,
-    paddingBottom: 16,
+    height:     64,
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     backgroundColor: 'transparent',
     zIndex:     100,
   },
 
   // White floating pill
   pill: {
-    width:             358,
+    width:             350, // 390 - 40
     height:            64,
     marginHorizontal:  'auto',
     flexDirection:     'row',
@@ -135,15 +134,14 @@ const styles = StyleSheet.create({
     borderColor:       'rgba(0,0,0,0.07)',
     paddingLeft:       12,
     paddingRight:      12,
-    overflow:          'hidden',
     ...Platform.select({
       web: { 
-        boxShadow: '0px 2px 4px rgba(0,0,0,0.04), 0px 8px 24px rgba(0,0,0,0.10), 0px 16px 40px rgba(0,0,0,0.06)' 
+        boxShadow: '0 4px 6px rgba(0,0,0,0.04), 0 10px 32px rgba(0,0,0,0.10)' 
       } as any,
       default: {
         shadowColor:   '#000000',
-        shadowOffset:  { width: 0, height: 16 },
-        shadowOpacity: 0.08,
+        shadowOffset:  { width: 0, height: 10 },
+        shadowOpacity: 0.10,
         shadowRadius:  32,
         elevation:     12,
       },
@@ -195,7 +193,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontSize:   10,
     fontWeight: '500',
-    color:      '#C4C4C4',
+    color:      '#BBBBBB',
   },
 
   iconWrap: {
