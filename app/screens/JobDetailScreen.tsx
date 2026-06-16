@@ -63,13 +63,13 @@ function relativeDate(iso?: string): string {
 function buildFitReasons(job: Job): string[] {
   const reasons: string[] = [];
   const skills = job.skills ?? [];
-  if (skills.length > 0) reasons.push(`You know ${skills[0]} — they need ${skills[0]}`);
+  if (skills.length > 0) reasons.push(`You know ${skills[0]} - they need ${skills[0]}`);
   if (skills.length > 1) {
     const extra = skills.slice(1, 3).join(' & ');
     reasons.push(`${extra} match their stack`);
   }
   const wm = job.workModel ?? '';
-  if (wm === 'Remote')   reasons.push('Fully remote — matches your remote preference');
+  if (wm === 'Remote')   reasons.push('Fully remote - matches your remote preference');
   else if (wm === 'Hybrid') reasons.push('Hybrid work aligns with your preference');
   else if (wm === 'On-site') reasons.push('On-site opportunity near your area');
   if (reasons.length === 0) {
