@@ -9,7 +9,7 @@ import {
   PlusJakartaSans_600SemiBold,
   PlusJakartaSans_700Bold,
 } from '@expo-google-fonts/plus-jakarta-sans';
-import { View, ActivityIndicator, Platform, StyleSheet, TextInput } from 'react-native';
+import { View, ActivityIndicator, Platform, StyleSheet, TextInput, Dimensions } from 'react-native';
 import { RootNavigator } from './app/navigation/RootNavigator';
 import { AuthProvider } from './app/context/AuthContext';
 import { Colors } from './app/theme/colors';
@@ -74,22 +74,36 @@ export default function App() {
     </SafeAreaProvider>
   );
 
-  // On web: wrap in a centered phone-frame container
+  // On web: phone shell on desktop, full-screen on mobile browsers
   if (Platform.OS === 'web') {
-    return (
-      <View style={styles.webOuter}>
-        <View style={styles.phoneShell}>
-          <View style={styles.phoneSpeaker} />
-          <View style={styles.phoneScreen}>
-            <GestureHandlerRootView style={{ flex: 1, overflow: 'hidden' }}>
-              {appContent}
-            </GestureHandlerRootView>
-          </View>
-          <View style={styles.homeIndicatorWrap}>
-            <View style={styles.homeIndicator} />
+    // Check real viewport width — mobile browsers are < 768px
+    const viewportWidth = Dimensions.get('window').width;
+    const isDesktop = viewportWidth >= 768;
+
+    if (isDesktop) {
+      // Desktop: centred phone-frame with dark background
+      return (
+        <View style={styles.webOuter}>
+          <View style={styles.phoneShell}>
+            <View style={styles.phoneSpeaker} />
+            <View style={styles.phoneScreen}>
+              <GestureHandlerRootView style={{ flex: 1, overflow: 'hidden' }}>
+                {appContent}
+              </GestureHandlerRootView>
+            </View>
+            <View style={styles.homeIndicatorWrap}>
+              <View style={styles.homeIndicator} />
+            </View>
           </View>
         </View>
-      </View>
+      );
+    }
+
+    // Mobile browser: full-screen, no phone shell
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        {appContent}
+      </GestureHandlerRootView>
     );
   }
 
