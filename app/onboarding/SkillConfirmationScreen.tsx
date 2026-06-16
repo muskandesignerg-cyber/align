@@ -136,7 +136,7 @@ export const SkillConfirmationScreen: React.FC<Props> = ({ navigation, route }) 
 
       {/* OnboardingHeader — back arrow + progress bars + step label */}
       <OnboardingHeader
-        currentStep={3}
+        currentStep={2}
         onBack={() => navigation.goBack()}
       />
 

@@ -267,7 +267,7 @@ export const ProfileBuilderScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* OnboardingHeader handles top safe-area + back arrow + progress bar + step label */}
         <OnboardingHeader
-          currentStep={2}
+          currentStep={1}
           onBack={() => navigation.goBack()}
         />
 
@@ -380,7 +380,7 @@ export const ProfileBuilderScreen: React.FC<Props> = ({ navigation }) => {
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
       <OnboardingHeader
-        currentStep={2}
+        currentStep={1}
         onBack={() => navigation.goBack()}
       />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>

@@ -258,7 +258,7 @@ export const RolePreferencesScreen: React.FC<Props> = ({ navigation }) => {
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       <OnboardingHeader
-        currentStep={4}
+        currentStep={3}
         onBack={() => navigation.goBack()}
       />
 

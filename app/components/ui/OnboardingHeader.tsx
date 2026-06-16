@@ -11,14 +11,14 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
-const TOTAL_BARS     = 4;
+const TOTAL_BARS     = 3;
 const COLOR_ACTIVE   = '#4F46E5';
 const COLOR_INACTIVE = '#E0E0E0';
 
 interface OnboardingHeaderProps {
   /** 1-based active step number */
   currentStep: number;
-  /** Kept for API compatibility — internally always 4 */
+  /** Kept for API compatibility — internally defaults to 3 */
   totalSteps?: number;
   onBack: () => void;
   backgroundColor?: string;
@@ -26,6 +26,7 @@ interface OnboardingHeaderProps {
 
 export const OnboardingHeader: React.FC<OnboardingHeaderProps> = ({
   currentStep,
+  totalSteps = TOTAL_BARS,
   onBack,
   backgroundColor = '#FFFFFF',
 }) => {
@@ -45,9 +46,9 @@ export const OnboardingHeader: React.FC<OnboardingHeaderProps> = ({
           <Ionicons name="arrow-back" size={22} color="#0A0A0A" />
         </TouchableOpacity>
 
-        {/* 4 bars — flex:1 each so they stretch to fill available width */}
+        {/* bars — flex:1 each so they stretch to fill available width */}
         <View style={styles.barsRow}>
-          {Array.from({ length: TOTAL_BARS }, (_, i) => (
+          {Array.from({ length: totalSteps }, (_, i) => (
             <View
               key={i}
               style={[
@@ -58,12 +59,16 @@ export const OnboardingHeader: React.FC<OnboardingHeaderProps> = ({
           ))}
         </View>
 
+        {/* Dummy view for symmetry (44px to match back button) */}
+        <View style={{ width: 44 }} />
       </View>
 
-      {/* ROW 2 — Step label right-aligned below bars */}
-      <Text style={styles.stepLabel}>
-        Step {currentStep} of {TOTAL_BARS}
-      </Text>
+      {/* ROW 2 — Step Indicator */}
+      <View style={styles.stepRow}>
+        <Text style={styles.stepText}>
+          Step {currentStep} of {totalSteps}
+        </Text>
+      </View>
 
     </SafeAreaView>
   );
@@ -102,13 +107,15 @@ const styles = StyleSheet.create({
   },
 
   // ROW 2
-  stepLabel: {
+  stepRow: {
+    paddingRight: 20,
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  stepText: {
     fontSize: 12,
     fontWeight: '500',
     color: '#999999',
     textAlign: 'right',
-    paddingRight: 20,
-    marginTop: 4,
-    paddingBottom: 8,
   },
 });
