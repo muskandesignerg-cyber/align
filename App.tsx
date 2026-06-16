@@ -9,32 +9,49 @@ import {
   PlusJakartaSans_600SemiBold,
   PlusJakartaSans_700Bold,
 } from '@expo-google-fonts/plus-jakarta-sans';
-import { View, ActivityIndicator, Platform, StyleSheet, TextInput } from 'react-native';
+import {
+  View,
+  ActivityIndicator,
+  Platform,
+  StyleSheet,
+  TextInput,
+  Dimensions,
+} from 'react-native';
 import { RootNavigator } from './app/navigation/RootNavigator';
 import { AuthProvider } from './app/context/AuthContext';
 import { Colors } from './app/theme/colors';
 
 // Remove focus outline on web inputs
 if (Platform.OS === 'web') {
-  const style = document.createElement('style');
-  style.textContent = `
-    input, textarea, [contenteditable] { outline: none !important; }
-    html, body { background: #0F1117 !important; margin: 0; padding: 0; height: 100%; }
-    #root { background: #0F1117 !important; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
-  `;
-  document.head.appendChild(style);
+  try {
+    const style = document.createElement('style');
+    style.textContent = `
+      * { -webkit-tap-highlight-color: transparent; }
+      input, textarea { outline: none !important; }
+      html, body {
+        margin: 0; padding: 0;
+        width: 100%; height: 100%;
+        background: #0F1117;
+        overflow: hidden;
+      }
+    `;
+    document.head.appendChild(style);
+  } catch (_) {}
 }
 
 (TextInput as any).defaultProps = {
   ...(TextInput as any).defaultProps,
   selectionColor: '#4C59D7',
-  style: [{ outlineWidth: 0 }],
 };
 
-// Safe-area metrics for web — simulates iPhone 15 Pro
+// iPhone 15 Pro dimensions for the phone frame
+const PHONE_W = 390;
+const PHONE_H = 844;
+
+// Safe-area metrics for web (simulates iPhone 15 Pro)
 const WEB_METRICS = {
-  insets: { top: 59, bottom: 34, left: 0, right: 0 },
-  frame: { x: 0, y: 0, width: 390, height: 844 },
+  insets: { top: 44, bottom: 34, left: 0, right: 0 },
+  frame: { x: 0, y: 0, width: PHONE_W, height: PHONE_H },
 };
 
 export default function App() {
@@ -53,14 +70,30 @@ export default function App() {
     );
   }
 
-  // ─── Web: Render the app inside a strict 390px phone frame ─────────────────
-  // React Native Web ignores CSS width on #root — we MUST use RN layout here.
+  // ── Web: Phone frame centred on dark background ──────────────────────────
   if (Platform.OS === 'web') {
+    const win = Dimensions.get('window');
     return (
-      // Outer: fills entire browser window, dark background
-      <View style={styles.webOuter}>
-        {/* Inner: strict 390×844 phone frame, white background */}
-        <View style={styles.phoneFrame}>
+      <View
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: win.width,
+          height: win.height,
+          backgroundColor: '#0F1117',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <View
+          style={{
+            width: PHONE_W,
+            height: PHONE_H,
+            backgroundColor: '#FFFFFF',
+            overflow: 'hidden',
+          }}
+        >
           <GestureHandlerRootView style={{ flex: 1 }}>
             <SafeAreaProvider initialMetrics={WEB_METRICS}>
               <AuthProvider>
@@ -73,7 +106,7 @@ export default function App() {
     );
   }
 
-  // ─── Native iOS/Android: full screen, OS handles safe areas ────────────────
+  // ── Native iOS/Android ───────────────────────────────────────────────────
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
@@ -91,26 +124,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
-  },
-
-  // Dark background — fills the whole browser window
-  webOuter: {
-    flex: 1,
-    backgroundColor: '#0F1117',
-    alignItems: 'center',
-    justifyContent: 'center',
-    // @ts-ignore — web-only
-    minHeight: '100vh',
-    width: '100%',
-  },
-
-  // The 390px phone frame — this is what React Native Web actually respects
-  phoneFrame: {
-    width: 390,
-    height: 844,
-    backgroundColor: '#FFFFFF',
-    overflow: 'hidden',
-    // @ts-ignore — web-only shadow
-    boxShadow: '0 0 60px rgba(0,0,0,0.5)',
   },
 });
