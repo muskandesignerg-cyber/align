@@ -142,15 +142,11 @@ export default function JobCard({ job, cardWidth, onPassPress, onSavePress, onPr
         {displayDesc}
       </Text>
 
-      {/* ROW 7 — Company info: employees + posted date */}
+      {/* ROW 7 — Company info: employees */}
       <View style={styles.metaRow}>
         <View style={styles.metaItem}>
-          <Users size={12} color="#AAAAAA" strokeWidth={2} />
+          <Users size={14} color="#AAAAAA" strokeWidth={2} />
           <Text style={styles.metaText}>{job.companySize ? `${job.companySize} employees` : '201–500 employees'}</Text>
-        </View>
-        <View style={styles.metaItem}>
-          <Clock size={12} color="#AAAAAA" strokeWidth={2} />
-          <Text style={styles.metaText}>Posted {relativeDate(job.postedAt)}</Text>
         </View>
       </View>
 
@@ -187,131 +183,129 @@ const styles = StyleSheet.create({
     // This guarantees 20px margin on both sides without any fixed pixel math
     width:           '100%',
     backgroundColor: '#FFFFFF',
-    borderRadius:    20,
+    borderRadius:    24,
     borderWidth:     1,
     borderColor:     '#F0F0F0',
     padding:         20,
     overflow:        'hidden',
     alignSelf:       'stretch',
     ...Platform.select({
-      web: { boxShadow: '0 2px 16px rgba(0,0,0,0.06)' } as any,
+      web: { boxShadow: '0 4px 24px rgba(0,0,0,0.06)' } as any,
       default: {
         shadowColor:   '#000000',
-        shadowOffset:  { width: 0, height: 2 },
+        shadowOffset:  { width: 0, height: 4 },
         shadowOpacity: 0.06,
-        shadowRadius:  16,
+        shadowRadius:  24,
         elevation:     3,
       },
     }),
   },
 
-  // Company row — horizontal, logo + name + badge
+  // Company row
   companyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 10,
+    gap: 12,
+    marginBottom: 16,
   },
   logoCircle: {
-    width: 36, height: 36, borderRadius: 10,
+    width: 40, height: 40, borderRadius: 12,
     backgroundColor: '#0A0A0A',
     alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
-  logoText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
-  companyName: { fontSize: 14, fontWeight: '500', color: '#0A0A0A' },
+  logoText: { color: '#FFFFFF', fontSize: 18, fontFamily: 'PlusJakartaSans_700Bold' },
+  companyName: { fontSize: 15, fontFamily: 'PlusJakartaSans_700Bold', color: '#0A0A0A' },
   typePill: {
-    backgroundColor: 'rgba(79,70,229,0.08)',
+    backgroundColor: '#F5F4FF',
     borderRadius: 999,
-    paddingHorizontal: 10, paddingVertical: 3,
-    marginLeft: 4,
+    paddingHorizontal: 12, paddingVertical: 4,
+    marginLeft: 2,
   },
   typePillText: {
-    fontSize: 11, fontWeight: '600', color: '#4F46E5', textTransform: 'uppercase',
+    fontSize: 11, fontFamily: 'PlusJakartaSans_700Bold', color: '#4F46E5', textTransform: 'uppercase',
   },
 
   // Job title
   title: {
-    fontSize: 22, fontWeight: '700', color: '#0A0A0A',
-    lineHeight: 28, marginBottom: 6,
-    marginTop: 0,  // companyRow marginBottom handles the spacing above
+    fontSize: 22, fontFamily: 'PlusJakartaSans_700Bold', color: '#0A0A0A',
+    lineHeight: 28, marginBottom: 10,
   },
 
   // Location row
   locationRow: {
     flexDirection: 'row', alignItems: 'center',
-    gap: 6, marginTop: 4, marginBottom: 10,
+    gap: 6, marginBottom: 16,
   },
-  locationText: { fontSize: 14, fontWeight: '400', color: '#666666' },
+  locationText: { fontSize: 13, fontFamily: 'PlusJakartaSans_500Medium', color: '#666666', marginRight: 6 },
 
   // Salary
   salaryRow: {
     flexDirection: 'row', alignItems: 'baseline',
-    marginTop: 0, marginBottom: 10,
+    marginBottom: 16,
   },
-  salary:    { fontSize: 20, fontWeight: '700', color: '#4F46E5' },
-  salaryPer: { fontSize: 14, fontWeight: '400', color: '#999999' },
+  salary:    { fontSize: 18, fontFamily: 'PlusJakartaSans_700Bold', color: '#4F46E5' },
+  salaryPer: { fontSize: 14, fontFamily: 'PlusJakartaSans_500Medium', color: '#999999' },
 
-  // Skill chips — nowrap + hidden overflow keeps chips inside card bounds
+  // Skill chips
   skillsRow: {
     flexDirection: 'row',
     flexWrap:      'nowrap',
     gap:           8,
-    marginBottom:  10,
-    overflow:      'hidden',   // clip chips that would push card wider
+    marginBottom:  20,
+    overflow:      'hidden',
   },
   skillChip: {
     backgroundColor:   '#FFFFFF',
     borderWidth:       1,
     borderColor:       '#E8E8E8',
     borderRadius:      999,
-    paddingHorizontal: 14,
-    paddingVertical:   6,
+    paddingHorizontal: 16,
+    paddingVertical:   8,
     alignItems:        'center',
     justifyContent:    'center',
-    flexShrink:        0,      // chips don't shrink — they clip instead
+    flexShrink:        0,
   },
-  skillText:      { fontSize: 13, fontWeight: '500', color: '#0A0A0A' },
-  skillChipExtra: { backgroundColor: 'rgba(79,70,229,0.08)', borderColor: 'rgba(79,70,229,0.15)' },
-  skillTextExtra: { color: '#4F46E5', fontWeight: '600' },
+  skillText:      { fontSize: 12, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#0A0A0A' },
+  skillChipExtra: { backgroundColor: '#F5F4FF', borderColor: '#EBE9FE' },
+  skillTextExtra: { color: '#4F46E5', fontFamily: 'PlusJakartaSans_700Bold' },
 
-  // Description — always wraps, never overflows card
+  // Description
   description: {
-    fontSize:   14,
-    fontWeight: '400',
+    fontSize:   13,
+    fontFamily: 'PlusJakartaSans_500Medium',
     color:      '#666666',
-    lineHeight: 22.4,
-    marginBottom: 8,
-    flexShrink: 1,   // allow text to shrink within card bounds
+    lineHeight: 22,
+    marginBottom: 16,
+    flexShrink: 1,
   },
 
   // Company info meta row
   metaRow: {
     flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 0, marginBottom: 12,
+    marginBottom: 16,
   },
   metaItem: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
   },
-  metaText: { fontSize: 12, fontWeight: '400', color: '#AAAAAA' },
+  metaText: { fontSize: 12, fontFamily: 'PlusJakartaSans_500Medium', color: '#999999' },
 
-  // Card footer — Pass (left) + Save (right)
+  // Card footer
   cardFooter: {
     flexDirection:  'row',
     justifyContent: 'space-between',
     alignItems:     'center',
-    marginTop:      12,
-    paddingTop:     12,
+    marginTop:      8,
+    paddingTop:     16,
     borderTopWidth: 1,
-    borderTopColor: '#F5F5F5',
+    borderTopColor: '#F5F5F7',
   },
   passLink: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
   },
-  passLinkText: { fontSize: 14, fontWeight: '500', color: '#999999' },
+  passLinkText: { fontSize: 14, fontFamily: 'PlusJakartaSans_500Medium', color: '#666666' },
   saveLink: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
   },
-  saveLinkText:  { fontFamily: 'PlusJakartaSans_500Medium', fontSize: 13, fontWeight: '500', color: '#4F46E5' },
+  saveLinkText:  { fontSize: 14, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#4F46E5' },
   savedLinkText: { color: '#E63946' },
 });
