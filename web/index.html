@@ -3,81 +3,40 @@
   <head>
     <meta charset="utf-8" />
     <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#0F1117" />
     <title>Align</title>
 
+    <!--
+      NOTE: Expo replaces <style id="expo-reset"> with its own defaults during build.
+      We put our custom styles in a SEPARATE block so they are never overridden.
+    -->
     <style id="expo-reset">
+      html, body { height: 100%; }
+      body { overflow: hidden; }
+      #root { display: flex; height: 100%; flex: 1; }
+    </style>
+
+    <!-- Our custom styles — separate block, never replaced by Expo -->
+    <style id="align-shell">
       *, *::before, *::after {
         box-sizing: border-box;
-        margin: 0;
-        padding: 0;
         -webkit-tap-highlight-color: transparent;
       }
 
-      /* Dark background — visible on left/right sides on desktop/tablet */
       html, body {
+        margin: 0;
+        padding: 0;
         width: 100%;
-        height: 100%;
-        height: 100dvh;
         background: #0F1117;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        overflow: hidden;
-        -webkit-font-smoothing: antialiased;
       }
 
-      /* The mobile app frame — strict 390px wide, centered */
-      #root {
-        width: 390px !important;
-        min-width: 390px !important;
-        max-width: 390px !important;
-        height: 100%;
-        height: 100dvh;
-        max-height: 844px;
-        background: #ffffff;
-        position: relative;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        border-radius: 0;
-      }
-
-      /* On real phones (narrow screens) — fill full screen */
-      @media screen and (max-width: 430px) {
-        html, body {
-          background: #ffffff;
-        }
-        #root {
-          width: 100% !important;
-          min-width: 100% !important;
-          max-width: 100% !important;
-          max-height: 100%;
-          border-radius: 0;
-        }
-      }
-
-      /* Hide scrollbars everywhere — feels like a native app */
+      /* Scrollbars hidden — native feel */
       ::-webkit-scrollbar { display: none; }
       * { -ms-overflow-style: none; scrollbar-width: none; }
-
-      /* Prevent any child from expanding beyond the 390px container */
-      #root > * {
-        max-width: 390px;
-        overflow: hidden;
-      }
-      @media screen and (max-width: 430px) {
-        #root > * {
-          max-width: 100%;
-        }
-      }
     </style>
   </head>
 
