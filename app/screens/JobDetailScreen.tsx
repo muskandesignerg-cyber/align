@@ -131,15 +131,15 @@ export const JobDetailScreen: React.FC = () => {
           </View>
 
           <View style={styles.fitPointRow}>
-            <CheckCircle2 size={16} color="#22C55E" fill="#22C55E" />
+            <CheckCircle2 size={16} color="#22C55E" strokeWidth={2} />
             <Text style={styles.fitPointText}>You know Figma, they need Figma</Text>
           </View>
           <View style={styles.fitPointRow}>
-            <CheckCircle2 size={16} color="#22C55E" fill="#22C55E" />
+            <CheckCircle2 size={16} color="#22C55E" strokeWidth={2} />
             <Text style={styles.fitPointText}>Adobe XD & Sketch match their stack</Text>
           </View>
           <View style={styles.fitPointRow}>
-            <CheckCircle2 size={16} color="#22C55E" fill="#22C55E" />
+            <CheckCircle2 size={16} color="#22C55E" strokeWidth={2} />
             <Text style={styles.fitPointText}>Hybrid work aligns with your preference</Text>
           </View>
         </View>
