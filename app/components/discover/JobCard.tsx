@@ -302,6 +302,6 @@ const styles = StyleSheet.create({
   saveLink: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
   },
-  saveLinkText:  { fontFamily: 'Inter', fontSize: 13, fontWeight: '500', color: '#4F46E5' },
+  saveLinkText:  { fontFamily: 'PlusJakartaSans_500Medium', fontSize: 13, fontWeight: '500', color: '#4F46E5' },
   savedLinkText: { color: '#E63946' },
 });

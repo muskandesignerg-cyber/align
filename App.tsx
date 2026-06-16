@@ -50,6 +50,27 @@ if (Platform.OS === 'web') {
   style: [{ outlineWidth: 0 }],
 };
 
+// ─── Web safe-area metrics ────────────────────────────────────────────────────
+// On web, react-native-safe-area-context returns 0 insets by default because
+// there's no native safe area API. We provide explicit initialMetrics so that
+// every SafeAreaView in the app receives proper padding.
+
+const windowDims = Dimensions.get('window');
+
+/** Desktop phone shell: phoneSpeaker (28px) already acts as the status bar,
+ *  so only a small additional top inset is needed for visual breathing room. */
+const WEB_DESKTOP_METRICS = {
+  insets: { top: 12, bottom: 0, left: 0, right: 0 },
+  frame: { x: 0, y: 0, width: 393, height: 796 },
+};
+
+/** Mobile browser: no phone shell, so we simulate the iOS status bar height
+ *  (48px) and the bottom home-indicator area (34px). */
+const WEB_MOBILE_METRICS = {
+  insets: { top: 48, bottom: 34, left: 0, right: 0 },
+  frame: { x: 0, y: 0, width: windowDims.width, height: windowDims.height },
+};
+
 export default function App() {
   const [fontsLoaded] = useFonts({
     PlusJakartaSans_400Regular,
@@ -66,17 +87,8 @@ export default function App() {
     );
   }
 
-  const appContent = (
-    <SafeAreaProvider>
-      <AuthProvider>
-        <RootNavigator />
-      </AuthProvider>
-    </SafeAreaProvider>
-  );
-
-  // On web: phone shell on desktop, full-screen on mobile browsers
+  // ─── Web layout ──────────────────────────────────────────────────────────────
   if (Platform.OS === 'web') {
-    // Check real viewport width — mobile browsers are < 768px
     const viewportWidth = Dimensions.get('window').width;
     const isDesktop = viewportWidth >= 768;
 
@@ -88,7 +100,11 @@ export default function App() {
             <View style={styles.phoneSpeaker} />
             <View style={styles.phoneScreen}>
               <GestureHandlerRootView style={{ flex: 1, overflow: 'hidden' }}>
-                {appContent}
+                <SafeAreaProvider initialMetrics={WEB_DESKTOP_METRICS}>
+                  <AuthProvider>
+                    <RootNavigator />
+                  </AuthProvider>
+                </SafeAreaProvider>
               </GestureHandlerRootView>
             </View>
             <View style={styles.homeIndicatorWrap}>
@@ -102,15 +118,23 @@ export default function App() {
     // Mobile browser: full-screen, no phone shell
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
-        {appContent}
+        <SafeAreaProvider initialMetrics={WEB_MOBILE_METRICS}>
+          <AuthProvider>
+            <RootNavigator />
+          </AuthProvider>
+        </SafeAreaProvider>
       </GestureHandlerRootView>
     );
   }
 
-  // On native: full screen
+  // ─── Native layout ───────────────────────────────────────────────────────────
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      {appContent}
+      <SafeAreaProvider>
+        <AuthProvider>
+          <RootNavigator />
+        </AuthProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
