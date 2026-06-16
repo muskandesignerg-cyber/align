@@ -337,7 +337,6 @@ export const JobDetailScreen: React.FC = () => {
                   navigation.navigate('AssessmentIntro', { assessment });
                 }}
               >
-                <Ionicons name="flask-outline" size={18} color="#FFFFFF" />
                 <Text style={styles.applyBtnTextWhite}>Start Round 2 Assessment →</Text>
               </TouchableOpacity>
               <Text style={styles.applySubText}>Complete to advance to the interview round</Text>
@@ -346,11 +345,11 @@ export const JobDetailScreen: React.FC = () => {
             // ROUND 3 — AI Interview
             <>
               <View style={styles.roundBadgeRow}>
-                <View style={[styles.roundDot, { backgroundColor: '#10B981' }]} />
-                <Text style={[styles.roundLabel, { color: '#10B981' }]}>Round 3 - AI Interview</Text>
+                <View style={[styles.roundDot, { backgroundColor: '#4F46E5' }]} />
+                <Text style={[styles.roundLabel, { color: '#4F46E5' }]}>Round 3 - AI Interview</Text>
               </View>
               <TouchableOpacity
-                style={[styles.applyBtnAssessment, { backgroundColor: '#10B981' }]}
+                style={styles.applyBtnAssessment}
                 activeOpacity={0.85}
                 onPress={() => {
                   const session: InterviewSession = {
@@ -368,7 +367,6 @@ export const JobDetailScreen: React.FC = () => {
                   navigation.navigate('InterviewIntro', { session });
                 }}
               >
-                <Ionicons name="mic-outline" size={18} color="#FFFFFF" />
                 <Text style={styles.applyBtnTextWhite}>Begin AI Interview →</Text>
               </TouchableOpacity>
               <Text style={styles.applySubText}>Your responses are scored by AI in real time</Text>
