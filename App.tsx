@@ -14,7 +14,7 @@ import { RootNavigator } from './app/navigation/RootNavigator';
 import { AuthProvider } from './app/context/AuthContext';
 import { Colors } from './app/theme/colors';
 
-// Remove focus outline on web
+// Remove focus outline on web inputs
 if (Platform.OS === 'web') {
   const style = document.createElement('style');
   style.textContent = `
@@ -32,9 +32,9 @@ if (Platform.OS === 'web') {
   style: [{ outlineWidth: 0 }],
 };
 
-// ─── Web safe-area metrics ────────────────────────────────────────────────────
-// On web, SafeAreaView always returns 0. We provide real insets so the header
-// and nav bar are never clipped on any mobile browser.
+// ─── Safe-area metrics for web ────────────────────────────────────────────────
+// SafeAreaView always returns 0 on web. Provide explicit insets so the header
+// and navbar are never hidden behind edges on any mobile browser.
 const dims = Dimensions.get('window');
 const WEB_METRICS = {
   insets: { top: 44, bottom: 34, left: 0, right: 0 },
@@ -57,7 +57,8 @@ export default function App() {
     );
   }
 
-  // Web: full-screen, no phone shell wrapper
+  // Web: CSS (#root in index.html) handles the 390px frame + black sides.
+  // React just fills that frame with the app content.
   if (Platform.OS === 'web') {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
@@ -70,7 +71,7 @@ export default function App() {
     );
   }
 
-  // Native: let the OS provide real safe-area insets
+  // Native iOS/Android: OS provides real safe-area insets automatically
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
