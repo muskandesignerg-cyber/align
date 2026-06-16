@@ -54,17 +54,7 @@ const HIRING_GOALS = [
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function StepDot({ step, current }: { step: number; current: number }) {
-  const active = step === current;
-  const done = step < current;
-  return (
-    <View style={[dotStyles.dot, done && dotStyles.done, active && dotStyles.active]}>
-      {done && <Text style={dotStyles.check}>✓</Text>}
-      {active && <Text style={dotStyles.num}>{step}</Text>}
-      {!active && !done && <Text style={dotStyles.num}>{step}</Text>}
-    </View>
-  );
-}
+// Removed StepDot — using horizontal progress bar instead
 
 function Chip({
   label, selected, onPress,
@@ -80,29 +70,32 @@ function Chip({
   );
 }
 
-function FloatingInput({
-  label, value, onChangeText, keyboardType, placeholder,
+function StandardInput({
+  label, value, onChangeText, keyboardType, placeholder, required
 }: {
   label: string;
   value: string;
   onChangeText: (t: string) => void;
   keyboardType?: 'default' | 'url';
   placeholder?: string;
+  required?: boolean;
 }) {
   const [focused, setFocused] = useState(false);
   return (
-    <View style={[inputStyles.wrap, focused && inputStyles.wrapFocused]}>
-      <Text style={inputStyles.label}>{label}</Text>
+    <View style={inputStyles.container}>
+      <Text style={inputStyles.label}>
+        {label} {required && <Text style={inputStyles.asterisk}>*</Text>}
+      </Text>
       <TextInput
-        style={inputStyles.input as any}
+        style={[inputStyles.input, focused && inputStyles.inputFocused]}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder ?? ''}
-        placeholderTextColor="#B0B8D0"
+        placeholderTextColor="#9CA3AF"
         keyboardType={keyboardType ?? 'default'}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        selectionColor="#4C59D7"
+        selectionColor="#4F46E5"
       />
     </View>
   );
@@ -170,11 +163,12 @@ export const EmployerOnboardingScreen: React.FC<Props> = () => {
         >
           {/* ── Header ── */}
           <View style={styles.header}>
-            {/* Progress dots */}
-            <View style={styles.dotsRow}>
-              <StepDot step={1} current={step} />
-              <View style={styles.dotLine} />
-              <StepDot step={2} current={step} />
+            {/* Progress bar */}
+            <View style={styles.progressContainer}>
+              <Text style={styles.progressLabel}>Step {step} of 2</Text>
+              <View style={styles.progressBarBg}>
+                <View style={[styles.progressBarFill, { width: step === 1 ? '50%' : '100%' }]} />
+              </View>
             </View>
 
             <Text style={styles.title}>
@@ -190,13 +184,14 @@ export const EmployerOnboardingScreen: React.FC<Props> = () => {
           {/* ── Step 1: Company Details ── */}
           {step === 1 && (
             <View style={styles.body}>
-              <FloatingInput
-                label="Company name *"
+              <StandardInput
+                label="Company name"
+                required
                 value={companyName}
                 onChangeText={setCompanyName}
                 placeholder="e.g. Acme Corp"
               />
-              <FloatingInput
+              <StandardInput
                 label="Website"
                 value={website}
                 onChangeText={setWebsite}
@@ -204,7 +199,7 @@ export const EmployerOnboardingScreen: React.FC<Props> = () => {
                 placeholder="https://yourcompany.com"
               />
 
-              <Text style={styles.sectionLabel}>Industry *</Text>
+              <Text style={styles.sectionLabel}>INDUSTRY <Text style={styles.asterisk}>*</Text></Text>
               <View style={styles.chipGrid}>
                 {INDUSTRIES.map((ind) => (
                   <Chip
@@ -216,8 +211,8 @@ export const EmployerOnboardingScreen: React.FC<Props> = () => {
                 ))}
               </View>
 
-              <Text style={styles.sectionLabel}>Company size *</Text>
-              <View style={styles.sizeRow}>
+              <Text style={styles.sectionLabel}>COMPANY SIZE <Text style={styles.asterisk}>*</Text></Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sizeRow}>
                 {COMPANY_SIZES.map((s) => (
                   <TouchableOpacity
                     key={s.label}
@@ -233,7 +228,7 @@ export const EmployerOnboardingScreen: React.FC<Props> = () => {
                     </Text>
                   </TouchableOpacity>
                 ))}
-              </View>
+              </ScrollView>
             </View>
           )}
 
@@ -275,7 +270,9 @@ export const EmployerOnboardingScreen: React.FC<Props> = () => {
               activeOpacity={0.85}
               disabled={!canProceedStep1}
             >
-              <Text style={styles.primaryBtnText}>Continue  →</Text>
+              <Text style={[styles.primaryBtnText, !canProceedStep1 && styles.primaryBtnTextDisabled]}>
+                Continue  →
+              </Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
@@ -305,116 +302,105 @@ export const EmployerOnboardingScreen: React.FC<Props> = () => {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const dotStyles = StyleSheet.create({
-  dot: {
-    width: 28, height: 28, borderRadius: 14,
-    borderWidth: 2, borderColor: '#D0D7FF',
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#F8F9FF',
-  },
-  active: { backgroundColor: '#4C59D7', borderColor: '#4C59D7' },
-  done: { backgroundColor: '#22C55E', borderColor: '#22C55E' },
-  num: { fontSize: 12, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#6B7280' },
-  check: { fontSize: 12, color: '#FFFFFF', fontFamily: 'PlusJakartaSans_700Bold' },
-});
-
 const chipStyles = StyleSheet.create({
   chip: {
-    paddingVertical: 8, paddingHorizontal: 14,
-    borderRadius: 20, borderWidth: 1.5, borderColor: '#D0D7FF',
-    backgroundColor: '#F8F9FF', marginRight: 8, marginBottom: 8,
+    paddingVertical: 10, paddingHorizontal: 18,
+    borderRadius: 999, borderWidth: 1, borderColor: '#E8E8E8',
+    backgroundColor: '#FFFFFF', marginRight: 10, marginBottom: 10,
   },
-  selected: { backgroundColor: '#4C59D7', borderColor: '#4C59D7' },
-  text: { fontSize: 13, fontFamily: 'PlusJakartaSans_500Medium', color: '#6B7280' },
-  textSelected: { color: '#FFFFFF' },
+  selected: { backgroundColor: '#4F46E5', borderColor: '#4F46E5' },
+  text: { fontSize: 14, fontFamily: 'PlusJakartaSans_500Medium', color: '#0A0A0A' },
+  textSelected: { color: '#FFFFFF', fontFamily: 'PlusJakartaSans_600SemiBold' },
 });
 
 const inputStyles = StyleSheet.create({
-  wrap: {
-    backgroundColor: '#F4F6FF',
-    borderWidth: 1.5, borderColor: '#D0D7FF',
-    borderRadius: 16, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 12,
-    marginBottom: 14,
+  container: {
+    marginBottom: 28,
   },
-  wrapFocused: { borderColor: '#4C59D7', borderWidth: 2 },
-  label: { fontSize: 11, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#6B7280', marginBottom: 4 },
+  label: { fontSize: 13, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#0A0A0A', marginBottom: 6 },
+  asterisk: { color: '#4F46E5' },
   input: {
-    fontSize: 16, fontFamily: 'PlusJakartaSans_400Regular', color: '#1A1A2E',
-    padding: 0, outlineWidth: 0,
+    backgroundColor: '#F5F5F7',
+    borderWidth: 1, borderColor: '#E8E8E8',
+    borderRadius: 14, height: 52, paddingHorizontal: 16,
+    fontSize: 15, fontFamily: 'PlusJakartaSans_400Regular', color: '#0A0A0A',
+    outlineWidth: 0,
   } as any,
+  inputFocused: { borderColor: '#4F46E5', borderWidth: 1 },
 });
 
 const sizeStyles = StyleSheet.create({
   box: {
-    flex: 1, alignItems: 'center', paddingVertical: 12,
-    borderRadius: 14, borderWidth: 1.5, borderColor: '#D0D7FF',
-    backgroundColor: '#F8F9FF',
+    width: 80, alignItems: 'center', paddingVertical: 14, paddingHorizontal: 8,
+    borderRadius: 14, borderWidth: 1, borderColor: '#E8E8E8',
+    backgroundColor: '#FFFFFF', marginRight: 10,
   },
-  boxSelected: { backgroundColor: '#4C59D7', borderColor: '#4C59D7' },
-  num: { fontSize: 13, fontFamily: 'PlusJakartaSans_700Bold', color: '#3B43A7' },
-  numSelected: { color: '#FFFFFF' },
-  desc: { fontSize: 10, fontFamily: 'PlusJakartaSans_400Regular', color: '#9CA3AF', marginTop: 2 },
-  descSelected: { color: 'rgba(255,255,255,0.8)' },
+  boxSelected: { backgroundColor: '#F5F4FF', borderColor: '#4F46E5', borderWidth: 1.5 },
+  num: { fontSize: 15, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#0A0A0A' },
+  numSelected: { color: '#4F46E5', fontFamily: 'PlusJakartaSans_700Bold' },
+  desc: { fontSize: 12, fontFamily: 'PlusJakartaSans_400Regular', color: '#9CA3AF', marginTop: 2 },
+  descSelected: { color: '#4F46E5', fontFamily: 'PlusJakartaSans_500Medium' },
 });
 
 const cardShadow = Platform.select({
-  web: { boxShadow: '0 4px 24px rgba(76,89,215,0.08)' } as any,
+  web: { boxShadow: '0 4px 24px rgba(79,70,229,0.08)' } as any,
   default: {
-    shadowColor: '#4C59D7', shadowOffset: { width: 0, height: 4 },
+    shadowColor: '#4F46E5', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08, shadowRadius: 24, elevation: 3,
   },
 });
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#FFFFFF' },
-  scroll: { paddingBottom: 20 },
-  header: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 },
-  dotsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
-  dotLine: { flex: 0, width: 40, height: 2, backgroundColor: '#E5E7EB', marginHorizontal: 8 },
+  scroll: { paddingBottom: 100 },
+  header: { paddingHorizontal: 20 },
+  progressContainer: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 20 },
+  progressLabel: { fontSize: 13, fontFamily: 'PlusJakartaSans_500Medium', color: '#666666' },
+  progressBarBg: { height: 4, backgroundColor: '#E8E8E8', borderRadius: 999, flex: 1 },
+  progressBarFill: { height: 4, backgroundColor: '#4F46E5', borderRadius: 999 },
   title: {
-    fontSize: 28, fontFamily: 'PlusJakartaSans_700Bold',
-    color: '#1A1A2E', letterSpacing: -0.3, marginBottom: 8,
+    fontSize: 26, fontFamily: 'PlusJakartaSans_700Bold',
+    color: '#0A0A0A', marginTop: 24, marginBottom: 6,
   },
   subtitle: {
-    fontSize: 14, fontFamily: 'PlusJakartaSans_400Regular',
-    color: '#6B7280', lineHeight: 22,
+    fontSize: 15, fontFamily: 'PlusJakartaSans_400Regular',
+    color: '#666666', marginBottom: 28,
   },
-  body: { paddingHorizontal: 24, paddingTop: 20 },
+  body: { paddingHorizontal: 20 },
   sectionLabel: {
     fontSize: 13, fontFamily: 'PlusJakartaSans_600SemiBold',
-    color: '#1A1A2E', marginBottom: 12, marginTop: 4,
-    textTransform: 'uppercase', letterSpacing: 0.8,
+    color: '#0A0A0A', marginBottom: 12, letterSpacing: 0.2,
   },
-  chipGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 12 },
-  sizeRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
+  asterisk: { color: '#4F46E5' },
+  chipGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 28 },
+  sizeRow: { flexDirection: 'row', marginBottom: 28 },
   summaryCard: {
-    marginTop: 24, borderRadius: 16, backgroundColor: '#F4F6FF',
-    borderWidth: 1.5, borderColor: '#D0D7FF', padding: 16, ...cardShadow,
+    marginTop: 24, borderRadius: 16, backgroundColor: '#F5F5F7',
+    borderWidth: 1, borderColor: '#E8E8E8', padding: 16, ...cardShadow,
   },
   summaryRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   summaryIcon: { fontSize: 32 },
   summaryCompany: {
-    fontSize: 18, fontFamily: 'PlusJakartaSans_700Bold', color: '#3B43A7',
+    fontSize: 18, fontFamily: 'PlusJakartaSans_700Bold', color: '#0A0A0A',
   },
   summaryMeta: {
-    fontSize: 13, fontFamily: 'PlusJakartaSans_400Regular', color: '#6B7280', marginTop: 2,
+    fontSize: 13, fontFamily: 'PlusJakartaSans_400Regular', color: '#666666', marginTop: 2,
   },
   bottom: {
-    paddingHorizontal: 24, paddingBottom: Platform.OS === 'ios' ? 8 : 24,
-    paddingTop: 12, gap: 8,
-    borderTopWidth: 1, borderTopColor: '#F0F2FF',
-    backgroundColor: '#FFFFFF',
+    position: 'absolute', bottom: 16, left: 0, right: 0,
+    paddingHorizontal: 20, backgroundColor: 'transparent',
   },
   primaryBtn: {
-    height: 56, borderRadius: 16, backgroundColor: '#4C59D7',
-    alignItems: 'center', justifyContent: 'center',
+    height: 52, borderRadius: 14, backgroundColor: '#4F46E5',
+    alignItems: 'center', justifyContent: 'center', flexDirection: 'row',
   },
-  primaryBtnDisabled: { opacity: 0.45 },
+  primaryBtnDisabled: { backgroundColor: '#E8E8E8' },
   primaryBtnText: {
-    fontSize: 17, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#FFFFFF', letterSpacing: 0.2,
+    fontSize: 17, fontFamily: 'PlusJakartaSans_600SemiBold', color: '#FFFFFF',
   },
-  backBtn: { height: 44, alignItems: 'center', justifyContent: 'center' },
+  primaryBtnTextDisabled: { color: '#9CA3AF' },
+  backBtn: { height: 44, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
   backBtnText: {
-    fontSize: 15, fontFamily: 'PlusJakartaSans_500Medium', color: '#6B7280',
+    fontSize: 15, fontFamily: 'PlusJakartaSans_500Medium', color: '#666666',
   },
 });
