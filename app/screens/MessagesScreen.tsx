@@ -13,6 +13,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Search, PenSquare, ArchiveX } from 'lucide-react-native';
+import { useAuth } from '../context/AuthContext';
+import ChatScreen from './ChatScreen';
 
 const FILTERS = ['All', 'Unread', 'Employers', 'Archived'];
 
@@ -82,8 +84,14 @@ const MOCK_CHATS = [
 
 export function MessagesScreen() {
   const navigation = useNavigation();
+  const { session } = useAuth();
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
+  
+  // Chat Modal State
+  const [chatVisible, setChatVisible] = useState(false);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [activeChatName, setActiveChatName] = useState<string>('');
   
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
@@ -171,7 +179,16 @@ export function MessagesScreen() {
             </View>
           ) : (
             filteredChats.map((chat) => (
-            <TouchableOpacity key={chat.id} style={styles.chatRow} activeOpacity={0.7} onPress={() => (navigation as any).navigate('Chat', { chatId: chat.id, company: chat.company })}>
+            <TouchableOpacity 
+              key={chat.id} 
+              style={styles.chatRow} 
+              activeOpacity={0.7} 
+              onPress={() => {
+                setActiveChatId(chat.id);
+                setActiveChatName(chat.company);
+                setChatVisible(true);
+              }}
+            >
               {/* Avatar */}
               <View style={[styles.avatar, { backgroundColor: chat.avatarBg }]}>
                 <Text style={styles.avatarLetter}>{chat.avatarLetter}</Text>
@@ -221,6 +238,18 @@ export function MessagesScreen() {
         </Animated.View>
 
       </ScrollView>
+
+      {/* Chat Modal Overlay */}
+      <ChatScreen
+        visible={chatVisible}
+        conversationId={activeChatId}
+        currentUserId={session?.user?.id || ''}
+        otherUserName={activeChatName}
+        onClose={() => {
+          setChatVisible(false);
+          setActiveChatId(null);
+        }}
+      />
     </SafeAreaView>
   );
 }
