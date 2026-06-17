@@ -1,20 +1,14 @@
 # Netlify configuration for Align (Expo Web SPA)
+# ─── All traffic permanently redirected to Vercel ─────────────────────────────
 
 [build]
-  command = "npx expo export --platform web"
+  command = "echo 'Redirecting to Vercel'"
   publish = "dist"
 
-[build.environment]
-  NODE_VERSION = "20"
-  NODE_OPTIONS = "--max-old-space-size=4096"
-  EXPO_NO_TELEMETRY = "1"
-  CI = "1"
-  # EXPO_PUBLIC_GROQ_API_KEY must be set in Netlify Dashboard → Environment Variables
-
-# ─── SPA fallback ─────────────────────────────────────────────────────────────
-# All routes (including /auth/callback) serve index.html so React Navigation
-# handles the route client-side instead of returning a 404.
+# ─── Permanent redirect: Netlify → Vercel ─────────────────────────────────────
+# Anyone visiting talent-logic-app.netlify.app/* gets sent to vague-alpha.vercel.app
 [[redirects]]
-  from = "/*"
-  to   = "/index.html"
-  status = 200
+  from   = "/*"
+  to     = "https://vague-alpha.vercel.app/:splat"
+  status = 301
+  force  = true
