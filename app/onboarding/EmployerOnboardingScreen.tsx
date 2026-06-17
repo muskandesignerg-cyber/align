@@ -401,6 +401,7 @@ const styles = StyleSheet.create({
   },
   input: {
     width: '100%',
+    maxWidth: 350,
     height: 50,
     backgroundColor: '#F7F7F7',
     borderWidth: 1,
@@ -421,6 +422,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
     width: '100%',
+    maxWidth: 350,
   },
   chip: {
     height: 38,
@@ -451,10 +453,10 @@ const styles = StyleSheet.create({
   sizeCardsWrap: {
     flexDirection: 'column',
     gap: 10,
-    width: '100%',
   },
   sizeCard: {
     width: '100%',
+    maxWidth: 350,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -518,6 +520,8 @@ const styles = StyleSheet.create({
   },
   continueBtn: {
     width: '100%',
+    maxWidth: 350,
+    alignSelf: 'center',
     height: 52,
     backgroundColor: '#4F46E5',
     borderRadius: 14,
