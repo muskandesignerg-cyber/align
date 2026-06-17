@@ -373,6 +373,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
+    width: '100%',
   },
   sizeCard: {
     width: (W - 48 - 10) / 2,
