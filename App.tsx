@@ -9,7 +9,7 @@ import {
   PlusJakartaSans_600SemiBold,
   PlusJakartaSans_700Bold,
 } from '@expo-google-fonts/plus-jakarta-sans';
-import { View, ActivityIndicator, Platform, TextInput } from 'react-native';
+import { View, Text, ActivityIndicator, Platform, TextInput } from 'react-native';
 import { RootNavigator } from './app/navigation/RootNavigator';
 import { AuthProvider } from './app/context/AuthContext';
 import { Colors } from './app/theme/colors';
