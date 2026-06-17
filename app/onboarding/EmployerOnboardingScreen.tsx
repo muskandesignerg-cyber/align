@@ -3,27 +3,26 @@ import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
   StyleSheet, Dimensions, KeyboardAvoidingView, Platform, StatusBar, ActivityIndicator
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { OnboardingStackParamList } from '../navigation/OnboardingNavigator';
 import { useAuth } from '../context/AuthContext';
 import { upsertProfile, completeOnboarding } from '../lib/database';
-import { OnboardingHeader } from '../components/ui/OnboardingHeader';
-
-const { width: W } = Dimensions.get('window');
+import { Ionicons } from '@expo/vector-icons';
 
 // Data
 const INDUSTRIES = [
-  'Technology', 'Finance', 'Healthcare', 'E-commerce',
-  'Education', 'Media', 'Manufacturing', 'Consulting',
+  'Technology', 'Finance', 'Healthcare',
+  'E-commerce', 'Education', 'Media',
+  'Manufacturing', 'Consulting',
   'Real Estate', 'Other',
 ];
 
 const COMPANY_SIZES = [
-  { range: '1–10',    label: 'Startup' },
-  { range: '11–50',   label: 'Small' },
-  { range: '51–200',  label: 'Mid-size' },
-  { range: '201–1000', label: 'Large' },
+  { range: '1-10',    label: 'Startup' },
+  { range: '11-50',   label: 'Small' },
+  { range: '51-200',  label: 'Mid-size' },
+  { range: '201-1000', label: 'Large' },
   { range: '1000+',   label: 'Enterprise' },
 ];
 
@@ -36,6 +35,7 @@ type Props = NativeStackScreenProps<OnboardingStackParamList, 'EmployerOnboardin
 
 export const EmployerOnboardingScreen: React.FC<Props> = ({ navigation }) => {
   const { user, refreshProfile, markOnboardingComplete } = useAuth();
+  const insets = useSafeAreaInsets();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
 
@@ -78,397 +78,468 @@ export const EmployerOnboardingScreen: React.FC<Props> = ({ navigation }) => {
     }
   }, [user, companyName, refreshProfile, markOnboardingComplete]);
 
-  return (
-    <View style={styles.root}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-
-      {/* TOP BAR — same as job seeker */}
-      <OnboardingHeader
-        currentStep={step}
-        totalSteps={2}
-        onBack={() => {
+  // Inline header matching exact spec
+  const renderHeader = () => (
+    <View style={[styles.header, { marginTop: insets.top }]}>
+      <TouchableOpacity
+        onPress={() => {
           if (step === 2) setStep(1);
           else navigation.goBack();
         }}
-      />
-
-      {/* CONTENT */}
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.headerBtnLeft}
       >
-        <ScrollView
+        <Ionicons name="arrow-back" size={22} color="#0A0A0A" />
+      </TouchableOpacity>
+
+      <View style={styles.progressPills}>
+        {[1, 2, 3].map((pillIndex) => (
+          <View
+            key={pillIndex}
+            style={[
+              styles.pill,
+              pillIndex <= step ? styles.pillActive : styles.pillInactive
+            ]}
+          />
+        ))}
+      </View>
+
+      <TouchableOpacity
+        onPress={() => {
+          if (step === 1) setStep(2);
+          else handleFinish();
+        }}
+        style={styles.headerBtnRight}
+      >
+        <Text style={styles.skipText}>Skip</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  return (
+    <View style={styles.wrapper}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+      {/* Frame constraint container */}
+      <View style={styles.screenContainer}>
+        {renderHeader()}
+
+        <KeyboardAvoidingView
           style={{ flex: 1 }}
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-          {step === 1 && (
-            <>
-              {/* PAGE TITLE */}
-              <Text style={styles.title}>Set up your company</Text>
-              <Text style={styles.subtitle}>
-                Tell candidates who you are so the best ones apply.
-              </Text>
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {step === 1 && (
+              <>
+                <Text style={styles.heading}>Set up your company</Text>
+                <Text style={styles.subtitle}>
+                  Tell candidates who you are so the best ones apply.
+                </Text>
 
-              {/* COMPANY NAME */}
-              <View style={styles.fieldGroup}>
-                <View style={styles.labelRow}>
-                  <Text style={styles.label}>Company name</Text>
-                  <Text style={styles.asterisk}>{' *'}</Text>
+                {/* COMPANY NAME */}
+                <View style={styles.section}>
+                  <View style={styles.labelRow}>
+                    <Text style={styles.labelText}>Company name</Text>
+                    <Text style={styles.asterisk}> *</Text>
+                  </View>
+                  <TextInput
+                    style={[styles.input, nameFocused && styles.inputFocused]}
+                    placeholder="e.g. Acme Corp"
+                    placeholderTextColor="#AAAAAA"
+                    value={companyName}
+                    onChangeText={setCompanyName}
+                    onFocus={() => setNameFocused(true)}
+                    onBlur={() => setNameFocused(false)}
+                    autoCorrect={false}
+                  />
                 </View>
-                <TextInput
-                  style={[styles.input, nameFocused && styles.inputFocused]}
-                  placeholder="e.g. Acme Corp"
-                  placeholderTextColor="#C0C4D0"
-                  value={companyName}
-                  onChangeText={setCompanyName}
-                  onFocus={() => setNameFocused(true)}
-                  onBlur={() => setNameFocused(false)}
-                  autoCorrect={false}
-                  returnKeyType="next"
-                />
-              </View>
 
-              {/* WEBSITE */}
-              <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Website</Text>
-                <TextInput
-                  style={[styles.input, websiteFocused && styles.inputFocused]}
-                  placeholder="https://yourcompany.com"
-                  placeholderTextColor="#C0C4D0"
-                  value={website}
-                  onChangeText={setWebsite}
-                  onFocus={() => setWebsiteFocused(true)}
-                  onBlur={() => setWebsiteFocused(false)}
-                  keyboardType="url"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  returnKeyType="next"
-                />
-              </View>
-
-              {/* INDUSTRY */}
-              <View style={styles.fieldGroup}>
-                <View style={styles.labelRow}>
-                  <Text style={styles.labelUpper}>INDUSTRY</Text>
-                  <Text style={styles.asterisk}>{' *'}</Text>
+                {/* WEBSITE */}
+                <View style={styles.section}>
+                  <Text style={styles.labelText}>Website</Text>
+                  <TextInput
+                    style={[styles.input, websiteFocused && styles.inputFocused, { marginTop: 8 }]}
+                    placeholder="https://yourcompany.com"
+                    placeholderTextColor="#AAAAAA"
+                    value={website}
+                    onChangeText={setWebsite}
+                    onFocus={() => setWebsiteFocused(true)}
+                    onBlur={() => setWebsiteFocused(false)}
+                    keyboardType="url"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
                 </View>
-                <View style={styles.chipWrap}>
-                  {INDUSTRIES.map((item) => (
-                    <TouchableOpacity
-                      key={item}
-                      style={[styles.chip, industry === item && styles.chipActive]}
-                      onPress={() => setIndustry(item)}
-                      activeOpacity={0.75}
-                    >
-                      <Text style={[styles.chipText, industry === item && styles.chipTextActive]}>
-                        {item}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
 
-              {/* COMPANY SIZE */}
-              <View style={styles.fieldGroup}>
-                <View style={styles.labelRow}>
-                  <Text style={styles.labelUpper}>COMPANY SIZE</Text>
-                  <Text style={styles.asterisk}>{' *'}</Text>
-                </View>
-                <View style={styles.sizeGrid}>
-                  {COMPANY_SIZES.map((item) => (
-                    <TouchableOpacity
-                      key={item.range}
-                      style={[styles.sizeCard, companySize === item.range && styles.sizeCardActive]}
-                      onPress={() => setCompanySize(item.range)}
-                      activeOpacity={0.75}
-                    >
-                      <Text style={[styles.sizeRange, companySize === item.range && styles.sizeRangeActive]}>
-                        {item.range}
-                      </Text>
-                      <Text style={[styles.sizeLabel, companySize === item.range && styles.sizeLabelActive]}>
-                        {item.label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            </>
-          )}
-
-          {step === 2 && (
-            <>
-              {/* PAGE TITLE */}
-              <Text style={styles.title}>What are you hiring for?</Text>
-              <Text style={styles.subtitle}>
-                We'll prioritize your pipeline based on your goals.
-              </Text>
-
-              <View style={styles.fieldGroup}>
-                <Text style={styles.sectionLabel}>Select all that apply</Text>
-                <View style={styles.chipWrap}>
-                  {HIRING_GOALS.map((goal) => (
-                    <TouchableOpacity
-                      key={goal}
-                      style={[styles.chip, hiringGoals.includes(goal) && styles.chipActive]}
-                      onPress={() => toggleGoal(goal)}
-                      activeOpacity={0.75}
-                    >
-                      <Text style={[styles.chipText, hiringGoals.includes(goal) && styles.chipTextActive]}>
-                        {goal}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-
-              {/* Summary card */}
-              <View style={styles.summaryCard}>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryIcon}>🏢</Text>
-                  <View>
-                    <Text style={styles.summaryCompany}>{companyName}</Text>
-                    <Text style={styles.summaryMeta}>{industry} · {companySize} employees</Text>
+                {/* INDUSTRY */}
+                <View style={[styles.section, { marginTop: 4 }]}>
+                  <View style={styles.labelRow}>
+                    <Text style={styles.labelUpper}>INDUSTRY</Text>
+                    <Text style={styles.asterisk}> *</Text>
+                  </View>
+                  <View style={styles.chipWrap}>
+                    {INDUSTRIES.map((item) => (
+                      <TouchableOpacity
+                        key={item}
+                        style={[styles.chip, industry === item && styles.chipSelected]}
+                        onPress={() => setIndustry(item)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.chipText, industry === item && styles.chipTextSelected]}>
+                          {item}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
                   </View>
                 </View>
-              </View>
-            </>
-          )}
 
-          {/* Bottom space */}
-          <View style={{ height: 32 }} />
-
-        </ScrollView>
-      </KeyboardAvoidingView>
-
-      {/* CONTINUE BUTTON — sticky bottom */}
-      <SafeAreaView edges={['bottom']} style={styles.bottomSafe}>
-        {step === 1 ? (
-          <TouchableOpacity
-            style={[styles.continueBtn, !isValidStep1 && styles.continueBtnOff]}
-            onPress={() => {
-              if (!isValidStep1) return;
-              setStep(2);
-            }}
-            activeOpacity={isValidStep1 ? 0.8 : 1}
-            disabled={!isValidStep1}
-          >
-            <Text style={[styles.continueBtnText, !isValidStep1 && styles.continueBtnTextOff]}>
-              Continue →
-            </Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={[styles.continueBtn, !isValidStep2 && styles.continueBtnOff]}
-            onPress={handleFinish}
-            activeOpacity={isValidStep2 ? 0.8 : 1}
-            disabled={!isValidStep2 || saving}
-          >
-            {saving ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={[styles.continueBtnText, !isValidStep2 && styles.continueBtnTextOff]}>
-                Get Started  ✦
-              </Text>
+                {/* COMPANY SIZE */}
+                <View style={[styles.section, { marginBottom: 0 }]}>
+                  <View style={styles.labelRow}>
+                    <Text style={styles.labelUpper}>COMPANY SIZE</Text>
+                    <Text style={styles.asterisk}> *</Text>
+                  </View>
+                  <View style={styles.sizeCardsWrap}>
+                    {COMPANY_SIZES.map((item) => {
+                      const isSelected = companySize === item.range;
+                      return (
+                        <TouchableOpacity
+                          key={item.range}
+                          style={[styles.sizeCard, isSelected && styles.sizeCardSelected]}
+                          onPress={() => setCompanySize(item.range)}
+                          activeOpacity={0.8}
+                        >
+                          <View style={styles.sizeCardLeft}>
+                            <Text style={styles.sizeRange}>{item.range}</Text>
+                            <Text style={styles.sizeLabel}>{item.label}</Text>
+                          </View>
+                          <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
+                            {isSelected && <View style={styles.radioInner} />}
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              </>
             )}
-          </TouchableOpacity>
-        )}
-      </SafeAreaView>
 
+            {step === 2 && (
+              <>
+                <Text style={styles.heading}>What are you hiring for?</Text>
+                <Text style={styles.subtitle}>
+                  We'll prioritize your pipeline based on your goals.
+                </Text>
+
+                <View style={styles.section}>
+                  <Text style={styles.labelUpper}>Select all that apply</Text>
+                  <View style={[styles.chipWrap, { marginTop: 12 }]}>
+                    {HIRING_GOALS.map((goal) => (
+                      <TouchableOpacity
+                        key={goal}
+                        style={[styles.chip, hiringGoals.includes(goal) && styles.chipSelected]}
+                        onPress={() => toggleGoal(goal)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.chipText, hiringGoals.includes(goal) && styles.chipTextSelected]}>
+                          {goal}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              </>
+            )}
+          </ScrollView>
+        </KeyboardAvoidingView>
+
+        {/* BOTTOM CTA */}
+        <View style={[styles.bottomCTA, { paddingBottom: Math.max(insets.bottom, 28) }]}>
+          {step === 1 ? (
+            <TouchableOpacity
+              style={[styles.continueBtn, !isValidStep1 && styles.continueBtnDisabled]}
+              onPress={() => {
+                if (isValidStep1) setStep(2);
+              }}
+              activeOpacity={isValidStep1 ? 0.8 : 1}
+              disabled={!isValidStep1}
+            >
+              <Text style={styles.continueBtnText}>Continue</Text>
+              <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[styles.continueBtn, (!isValidStep2 || saving) && styles.continueBtnDisabled]}
+              onPress={handleFinish}
+              activeOpacity={isValidStep2 ? 0.8 : 1}
+              disabled={!isValidStep2 || saving}
+            >
+              {saving ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <>
+                  <Text style={styles.continueBtnText}>Finish Setup</Text>
+                  <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+                </>
+              )}
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  root: {
+  wrapper: {
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  content: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 24,
+  screenContainer: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 390,
+    alignSelf: 'center',
+    backgroundColor: '#FFFFFF',
   },
-  title: {
-    fontSize: 28,
+  header: {
+    height: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+    backgroundColor: '#FFFFFF',
+  },
+  headerBtnLeft: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  },
+  headerBtnRight: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+  },
+  progressPills: {
+    flexDirection: 'row',
+    gap: 4,
+    alignItems: 'center',
+  },
+  pill: {
+    width: 24,
+    height: 4,
+    borderRadius: 999,
+  },
+  pillActive: {
+    backgroundColor: '#4F46E5',
+  },
+  pillInactive: {
+    backgroundColor: '#EBEBEB',
+  },
+  skipText: {
+    fontFamily: 'Inter',
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#AAAAAA',
+  },
+  scrollContent: {
+    paddingTop: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 100, // Make room for bottom CTA
+  },
+  heading: {
+    fontFamily: 'Inter',
+    fontSize: 26,
     fontWeight: '700',
-    color: '#1A1A2E',
-    lineHeight: 36,
-    fontFamily: 'PlusJakartaSans_700Bold',
+    color: '#0A0A0A',
+    lineHeight: 32.5, // 1.25
+    marginBottom: 8,
   },
   subtitle: {
-    fontSize: 15,
+    fontFamily: 'Inter',
+    fontSize: 14,
     fontWeight: '400',
-    color: '#6B7280',
-    marginTop: 8,
-    lineHeight: 22,
-    fontFamily: 'PlusJakartaSans_400Regular',
+    color: '#888888',
+    lineHeight: 21, // 150%
+    marginBottom: 24,
   },
-  fieldGroup: {
-    marginTop: 28,
+  section: {
+    marginBottom: 24,
   },
   labelRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#1A1A2E',
-    fontFamily: 'PlusJakartaSans_600SemiBold',
+  labelText: {
+    fontFamily: 'Inter',
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#0A0A0A',
   },
   labelUpper: {
-    fontSize: 12,
+    fontFamily: 'Inter',
+    fontSize: 11,
     fontWeight: '600',
-    color: '#6B7280',
-    letterSpacing: 1,
+    color: '#888888',
+    letterSpacing: 0.6,
     textTransform: 'uppercase',
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-  },
-  sectionLabel: {
-    fontSize: 13,
-    color: '#0A0A0A',
-    marginBottom: 12,
-    letterSpacing: 0.2,
-    fontFamily: 'PlusJakartaSans_600SemiBold',
   },
   asterisk: {
-    fontSize: 14,
+    fontFamily: 'Inter',
+    fontSize: 13,
     fontWeight: '600',
-    color: '#4C59D7',
+    color: '#4F46E5',
   },
   input: {
     width: '100%',
-    height: 52,
-    backgroundColor: '#F4F6FF',
+    height: 50,
+    backgroundColor: '#F7F7F7',
     borderWidth: 1,
-    borderColor: '#D0D7FF',
+    borderColor: '#EBEBEB',
     borderRadius: 12,
     paddingHorizontal: 16,
-    fontSize: 15,
-    color: '#1A1A2E',
-    fontFamily: 'PlusJakartaSans_400Regular',
-    outlineWidth: 0,
-  } as any,
+    fontFamily: 'Inter',
+    fontSize: 14,
+    color: '#0A0A0A',
+  },
   inputFocused: {
-    borderColor: '#4C59D7',
     borderWidth: 1.5,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#4C59D7',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 0,
+    borderColor: '#4F46E5',
+    backgroundColor: '#FAFAFE',
   },
   chipWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
+    width: '100%',
   },
   chip: {
+    height: 38,
     paddingHorizontal: 16,
-    paddingVertical: 10,
     backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
-    borderColor: '#D0D7FF',
-    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#EBEBEB',
+    borderRadius: 999,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  chipActive: {
-    backgroundColor: '#4C59D7',
-    borderColor: '#4C59D7',
+  chipSelected: {
+    backgroundColor: '#4F46E5',
+    borderWidth: 0,
   },
   chipText: {
-    fontSize: 14,
+    fontFamily: 'Inter',
+    fontSize: 13,
     fontWeight: '500',
-    color: '#1A1A2E',
-    fontFamily: 'PlusJakartaSans_500Medium',
+    color: '#555555',
   },
-  chipTextActive: {
+  chipTextSelected: {
+    fontFamily: 'Inter',
+    fontSize: 13,
+    fontWeight: '600',
     color: '#FFFFFF',
   },
-  sizeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  sizeCardsWrap: {
+    flexDirection: 'column',
     gap: 10,
+    width: '100%',
   },
   sizeCard: {
-    width: (W - 48 - 10) / 2,
-    paddingVertical: 16,
-    paddingHorizontal: 14,
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
-    borderColor: '#D0D7FF',
+    borderColor: '#EBEBEB',
     borderRadius: 14,
   },
-  sizeCardActive: {
-    backgroundColor: '#EEF0FF',
-    borderColor: '#4C59D7',
-    borderWidth: 2,
+  sizeCardSelected: {
+    borderColor: '#4F46E5',
+    backgroundColor: '#F8F8FF',
+  },
+  sizeCardLeft: {
+    flexDirection: 'column',
+    gap: 2,
   },
   sizeRange: {
-    fontSize: 17,
+    fontFamily: 'Inter',
+    fontSize: 16,
     fontWeight: '700',
-    color: '#1A1A2E',
-    fontFamily: 'PlusJakartaSans_700Bold',
-  },
-  sizeRangeActive: {
-    color: '#3B43A7',
+    color: '#0A0A0A',
   },
   sizeLabel: {
+    fontFamily: 'Inter',
     fontSize: 12,
     fontWeight: '400',
-    color: '#6B7280',
-    marginTop: 4,
-    fontFamily: 'PlusJakartaSans_400Regular',
+    color: '#888888',
   },
-  sizeLabelActive: {
-    color: '#4C59D7',
+  radioOuter: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#D1D5DB',
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  summaryCard: {
-    marginTop: 24, borderRadius: 16, backgroundColor: '#F5F5F7',
-    borderWidth: 1, borderColor: '#E8E8E8', padding: 16,
+  radioOuterSelected: {
+    borderColor: '#4F46E5',
   },
-  summaryRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  summaryIcon: { fontSize: 32 },
-  summaryCompany: {
-    fontSize: 18, fontFamily: 'PlusJakartaSans_700Bold', color: '#0A0A0A',
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#4F46E5',
   },
-  summaryMeta: {
-    fontSize: 13, fontFamily: 'PlusJakartaSans_400Regular', color: '#666666', marginTop: 2,
-  },
-  bottomSafe: {
+  bottomCTA: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#F0F0F0',
+    paddingTop: 12,
+    paddingHorizontal: 20,
+    zIndex: 100,
   },
   continueBtn: {
-    marginHorizontal: 24,
-    marginVertical: 16,
-    height: 56,
-    backgroundColor: '#4C59D7',
-    borderRadius: 16,
-    justifyContent: 'center',
+    width: '100%',
+    height: 52,
+    backgroundColor: '#4F46E5',
+    borderRadius: 14,
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#4C59D7',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.28,
+    justifyContent: 'center',
+    gap: 8,
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
     shadowRadius: 16,
-    elevation: 8,
+    elevation: 4,
   },
-  continueBtnOff: {
-    backgroundColor: '#C7CCF5',
+  continueBtnDisabled: {
+    backgroundColor: '#E0E0E0',
     shadowOpacity: 0,
     elevation: 0,
   },
   continueBtnText: {
-    fontSize: 16,
+    fontFamily: 'Inter',
+    fontSize: 15,
     fontWeight: '700',
     color: '#FFFFFF',
-    fontFamily: 'PlusJakartaSans_700Bold',
-  },
-  continueBtnTextOff: {
-    opacity: 0.7,
   },
 });
