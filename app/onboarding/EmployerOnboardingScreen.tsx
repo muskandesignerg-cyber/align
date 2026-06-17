@@ -10,7 +10,9 @@ import { useAuth } from '../context/AuthContext';
 import { upsertProfile, completeOnboarding } from '../lib/database';
 import { OnboardingHeader } from '../components/ui/OnboardingHeader';
 
-const { width: W } = Dimensions.get('window');
+const { width: _windowWidth } = Dimensions.get('window');
+// Ensure W is 390 on web so the cards don't use the full desktop monitor width!
+const W = Platform.OS === 'web' ? 390 : _windowWidth;
 
 // Data
 const INDUSTRIES = [
