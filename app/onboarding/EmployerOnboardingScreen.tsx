@@ -134,7 +134,9 @@ export const EmployerOnboardingScreen: React.FC<Props> = ({ navigation }) => {
 
               {/* WEBSITE */}
               <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Website</Text>
+                <View style={styles.labelRow}>
+                  <Text style={styles.label}>Website</Text>
+                </View>
                 <TextInput
                   style={[styles.input, websiteFocused && styles.inputFocused]}
                   placeholder="https://yourcompany.com"
