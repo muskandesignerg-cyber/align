@@ -9,6 +9,8 @@ import { OnboardingStackParamList } from '../navigation/OnboardingNavigator';
 import { useAuth } from '../context/AuthContext';
 import { upsertProfile, completeOnboarding } from '../lib/database';
 import { OnboardingHeader } from '../components/ui/OnboardingHeader';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 
 const { width: _windowWidth } = Dimensions.get('window');
 // Ensure W is 390 on web so the cards don't use the full desktop monitor width!
@@ -54,6 +56,7 @@ export const EmployerOnboardingScreen: React.FC<Props> = ({ navigation }) => {
   const [hiringGoals, setHiringGoals] = useState<string[]>([]);
 
   const toggleGoal = useCallback((goal: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setHiringGoals((prev) =>
       prev.includes(goal) ? prev.filter((g) => g !== goal) : [...prev, goal]
     );
@@ -210,21 +213,39 @@ export const EmployerOnboardingScreen: React.FC<Props> = ({ navigation }) => {
               </Text>
 
               <View style={styles.fieldGroup}>
-                <Text style={styles.labelUpper}>SELECT ALL THAT APPLY</Text>
-                <View style={[styles.chipWrap, { marginTop: 12 }]}>
-                  {HIRING_GOALS.map((goal) => (
-                    <TouchableOpacity
-                      key={goal}
-                      style={[styles.chip, hiringGoals.includes(goal) && styles.chipActive]}
-                      onPress={() => toggleGoal(goal)}
-                      activeOpacity={0.75}
-                    >
-                      <Text style={[styles.chipText, hiringGoals.includes(goal) && styles.chipTextActive]}>
-                        {goal}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                <Text style={styles.selectLabel}>SELECT ALL THAT APPLY</Text>
+                <View style={styles.goalGrid}>
+                  {HIRING_GOALS.map((goal) => {
+                    const isSel = hiringGoals.includes(goal);
+                    return (
+                      <TouchableOpacity
+                        key={goal}
+                        style={[styles.goalChip, isSel && styles.goalChipActive]}
+                        onPress={() => toggleGoal(goal)}
+                        activeOpacity={0.75}
+                      >
+                        {isSel && (
+                          <Ionicons
+                            name="checkmark"
+                            size={16}
+                            color="#FFFFFF"
+                            style={{ marginRight: 6 }}
+                          />
+                        )}
+                        <Text style={[styles.goalChipText, isSel && styles.goalChipTextActive]}>
+                          {goal}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
+                
+                {/* Selected count hint */}
+                {hiringGoals.length > 0 && (
+                  <Text style={styles.countHint}>
+                    {hiringGoals.length} goal{hiringGoals.length > 1 ? 's' : ''} selected
+                  </Text>
+                )}
               </View>
             </>
           )}
@@ -261,7 +282,7 @@ export const EmployerOnboardingScreen: React.FC<Props> = ({ navigation }) => {
               <ActivityIndicator color="#FFFFFF" />
             ) : (
               <Text style={[styles.continueBtnText, !isValidStep2 && styles.continueBtnTextOff]}>
-                Get Started  ✦
+                Continue →
               </Text>
             )}
           </TouchableOpacity>
@@ -281,6 +302,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 24,
+    flexGrow: 1,
   },
   title: {
     fontSize: 28,
@@ -444,5 +466,61 @@ const styles = StyleSheet.create({
   },
   continueBtnTextOff: {
     opacity: 0.7,
+  },
+  countHint: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: '#4C59D7',
+    textAlign: 'center',
+    marginTop: 24,
+    fontFamily: 'PlusJakartaSans_500Medium',
+  },
+  selectLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#6B7280',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    marginTop: 8,
+    marginBottom: 14,
+    fontFamily: 'PlusJakartaSans_700Bold',
+  },
+  goalGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    width: '100%',
+  },
+  goalChip: {
+    width: (W - 48 - 12) / 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#D0D7FF',
+    borderRadius: 12,
+    minHeight: 52,
+  },
+  goalChipActive: {
+    backgroundColor: '#4C59D7',
+    borderColor: '#4C59D7',
+    shadowColor: '#4C59D7',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.20,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  goalChipText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#1A1A2E',
+    textAlign: 'center',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
+  },
+  goalChipTextActive: {
+    color: '#FFFFFF',
   },
 });
