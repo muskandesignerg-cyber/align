@@ -69,7 +69,8 @@ export default function App() {
         <View
           style={{
             width: 390,
-            height: 844,
+            height: '100%',
+            maxHeight: 844,
             backgroundColor: '#FFFFFF',
             overflow: 'hidden',
           }}
