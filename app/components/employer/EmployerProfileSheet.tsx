@@ -123,10 +123,11 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     height: '50%',
     paddingBottom: Platform.OS === 'ios' ? 34 : 20,
-    ...Platform.select({
-      web: { boxShadow: '0 -4px 24px rgba(0,0,0,0.1)' } as any,
-      default: { shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 20 },
-    }),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 20,
   },
   handleWrap: {
     alignItems: 'center',

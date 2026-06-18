@@ -102,12 +102,13 @@ export const EmployerOnboardingScreen: React.FC<Props> = ({ navigation }) => {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
+        <View style={{ flex: 1 }}>
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={styles.content}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
           {step === 1 && (
             <>
               {/* PAGE TITLE */}
@@ -253,11 +254,10 @@ export const EmployerOnboardingScreen: React.FC<Props> = ({ navigation }) => {
           {/* Bottom space */}
           <View style={{ height: 32 }} />
 
-        </ScrollView>
-      </KeyboardAvoidingView>
+          </ScrollView>
 
-      {/* CONTINUE BUTTON — sticky bottom */}
-      <SafeAreaView edges={['bottom']} style={styles.bottomSafe}>
+          {/* CONTINUE BUTTON — sticky bottom */}
+          <SafeAreaView edges={['bottom']} style={styles.bottomSafe}>
         {step === 1 ? (
           <TouchableOpacity
             style={[styles.continueBtn, !isValidStep1 && styles.continueBtnOff]}
@@ -287,8 +287,9 @@ export const EmployerOnboardingScreen: React.FC<Props> = ({ navigation }) => {
             )}
           </TouchableOpacity>
         )}
-      </SafeAreaView>
-
+        </SafeAreaView>
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
 };
@@ -486,18 +487,17 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans_700Bold',
   },
   goalGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: 'column',
     gap: 12,
     width: '100%',
   },
   goalChip: {
-    width: (W - 48 - 12) / 2,
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingVertical: 14,
-    paddingHorizontal: 8,
+    paddingHorizontal: 16,
     backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
     borderColor: '#D0D7FF',

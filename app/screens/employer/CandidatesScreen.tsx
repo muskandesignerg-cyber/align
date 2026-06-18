@@ -24,19 +24,25 @@ import { Ionicons } from '@expo/vector-icons';
 import { PipelineCandidate, PipelineStage } from '../../types/employer';
 import CandidateDetailSheet from '../../components/employer/candidate-detail/CandidateDetailSheet';
 import { useEmployer } from '../../context/EmployerContext';
-import { useAuth } from '../../context/AuthContext';
-import CandidateCard from '../../components/employer/pipeline/CandidateCard';
-import ChatScreen from '../ChatScreen';
 import AppTopBar from '../../components/shared/AppTopBar';
 import EmployerProfileSheet from '../../components/employer/EmployerProfileSheet';
-import { getOrCreateConversation } from '../../lib/database';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { EmployerStackParamList } from '../../navigation/EmployerNavigator';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 type TabKey = 'newMatches' | 'testing' | 'interview' | 'hired';
+
+interface Candidate {
+  id:       string;
+  letter:   string;
+  avatarBg: string;
+  name:     string;
+  role:     string;
+  skills:   string[];
+  overflow: number;
+  match:    number;
+}
+
+
 
 // ─── Tab config ────────────────────────────────────────────────────────────────
 
@@ -47,15 +53,137 @@ const TAB_LABELS: Record<TabKey, string> = {
   hired:      'Hired',
 };
 
+function avatarColor(id: string): string {
+  const COLORS = ['#1A1A2E', '#0F4C75', '#134E4A', '#4C59D7', '#6D28D9', '#065F46'];
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  return COLORS[Math.abs(hash) % COLORS.length];
+}
+
+interface CardProps {
+  c: PipelineCandidate;
+  statusStrip?:   React.ReactNode;
+  actionLeft:     { icon: keyof typeof Ionicons.glyphMap; label: string; onPress?: () => void; moving?: boolean };
+  actionRight:    { icon: keyof typeof Ionicons.glyphMap; label: string; color?: string; bg?: string; border?: string; onPress?: () => void };
+  movingId?:      string;
+}
+
+function CandidateCard({ c, statusStrip, actionLeft, actionRight, movingId }: CardProps) {
+  const moving = movingId === c.id;
+  const initial = c.candidateName ? c.candidateName[0].toUpperCase() : '?';
+  const bg = avatarColor(c.candidateId);
+  const visibleSkills = c.skills.slice(0, 3);
+  const overflow = c.skills.length > 3 ? c.skills.length - 3 : 0;
+
+  return (
+    <View style={[card.wrap, moving && card.wrapMoving]}>
+      {/* Row 1 — avatar + info + menu */}
+      <View style={card.row1}>
+        <View style={[card.avatar, { backgroundColor: bg }]}>
+          <Text style={card.avatarLetter}>{initial}</Text>
+        </View>
+        <View style={card.info}>
+          <Text style={card.name}>{c.candidateName}</Text>
+          <Text style={card.role}>{c.candidateTitle}</Text>
+        </View>
+        <TouchableOpacity activeOpacity={0.7} style={card.menuBtn}>
+          <Ionicons name="ellipsis-vertical-outline" size={18} color="#CCCCCC" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Row 2 — skills + match */}
+      <View style={card.row2}>
+        <View style={card.skillsRow}>
+          {visibleSkills.map((s) => (
+            <View key={s} style={card.chip}>
+              <Text style={card.chipText}>{s}</Text>
+            </View>
+          ))}
+          {overflow > 0 && (
+            <View style={card.overflowChip}>
+              <Text style={card.overflowText}>+{overflow}</Text>
+            </View>
+          )}
+        </View>
+        <View style={card.matchBadge}>
+          <Ionicons name="star" size={11} color="#4F46E5" />
+          <Text style={card.matchText}>{c.matchScore}% Match</Text>
+        </View>
+      </View>
+
+      {/* Status strip (Testing / Interview / Hired) */}
+      {statusStrip && (
+        <View style={{ marginTop: 10 }}>{statusStrip}</View>
+      )}
+
+      {/* Divider */}
+      <View style={card.divider} />
+
+      {/* Quick Actions */}
+      <View style={card.actions}>
+        <TouchableOpacity
+          style={card.actionGray}
+          activeOpacity={0.8}
+          onPress={actionLeft.onPress}
+        >
+          <Ionicons name={actionLeft.icon} size={13} color="#555555" />
+          <Text style={card.actionGrayText}>{actionLeft.label}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[card.actionBlue, actionRight.bg ? { backgroundColor: actionRight.bg, borderColor: actionRight.border } : null]}
+          activeOpacity={0.8}
+          onPress={actionRight.onPress}
+        >
+          <Ionicons name={actionRight.icon} size={13} color={actionRight.color ?? '#4F46E5'} />
+          <Text style={[card.actionBlueText, actionRight.color ? { color: actionRight.color } : null]}>
+            {actionRight.label}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+// ─── Status strip ─────────────────────────────────────────────────────────────
+
+function StatusStrip({
+  icon, text, bg, border, color,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  text: string;
+  bg: string;
+  border: string;
+  color: string;
+}) {
+  return (
+    <View style={[strip.wrap, { backgroundColor: bg, borderColor: border }]}>
+      <Ionicons name={icon} size={13} color={color} />
+      <Text style={[strip.text, { color }]}>{text}</Text>
+    </View>
+  );
+}
+
+const strip = StyleSheet.create({
+  wrap: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 8, padding: 8, paddingHorizontal: 12 },
+  text: { fontSize: 12, fontWeight: '500' },
+});
+
+import { getOrCreateConversation } from '../../lib/database';
+import { useAuth } from '../../context/AuthContext';
+import ChatScreen from '../ChatScreen';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { EmployerStackParamList } from '../../navigation/EmployerNavigator';
+
 // ─── Main Screen ───────────────────────────────────────────────────────────────
 
 export default function CandidatesScreen() {
-  const { state, dispatch, moveCandidate, stageCounts } = useEmployer();
   const { user, profile } = useAuth();
-  
+  const { allCandidates, moveCandidate } = useEmployer();
+  const navigation = useNavigation<NativeStackNavigationProp<EmployerStackParamList>>();
+
   const firstName = profile?.first_name || user?.user_metadata?.first_name || 'Rahul';
   const companyName = profile?.company_name || 'Company Name';
-  const navigation = useNavigation<NativeStackNavigationProp<EmployerStackParamList>>();
 
   const [activeTab, setActiveTab] = useState<TabKey>('newMatches');
   const [movingId,   setMovingId]   = useState<string | null>(null);
@@ -317,7 +445,7 @@ export default function CandidatesScreen() {
         jobTitle={chatCandidate?.jobId === 'pipeline-job' ? undefined : chatCandidate?.jobId}
         onClose={() => { setChatOpen(false); setActiveConvId(null); setChatCandidate(null); }}
       />
-
+      
       {/* ── PROFILE SHEET ────────────────────────────── */}
       <EmployerProfileSheet
         visible={showProfileSheet}

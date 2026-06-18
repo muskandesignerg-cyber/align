@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -38,8 +39,8 @@ function EmployerTabs() {
           backgroundColor: '#FFFFFF',
           borderTopColor: '#F0F2FF',
           borderTopWidth: 1,
-          height: 64 + 34,
-          paddingBottom: 34,
+          height: Platform.OS === 'ios' ? 98 : 65,
+          paddingBottom: Platform.OS === 'ios' ? 34 : 10,
           paddingTop: 10,
           elevation: 0,
           shadowColor: '#4C59D7',
