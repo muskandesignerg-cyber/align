@@ -58,7 +58,7 @@ export default function App() {
     return (
       <View
         style={{
-          flex: 1,
+          height: '100vh' as any,
           width: '100%' as any,
           backgroundColor: '#0F1117',
           alignItems: 'center',
