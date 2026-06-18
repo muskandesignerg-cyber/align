@@ -25,57 +25,9 @@ import CandidateMiniCard from '../../components/employer/pipeline/CandidateMiniC
 import CandidateDetailSheet from '../../components/employer/candidate-detail/CandidateDetailSheet';
 import PostRoleSheet from '../../components/employer/post-role/PostRoleSheet';
 import JobHeader from '../../components/employer/pipeline/JobHeader';
+import AppTopBar from '../../components/shared/AppTopBar';
+import EmployerProfileSheet from '../../components/employer/EmployerProfileSheet';
 
-// ─── Top bar shared across employer tabs ──────────────────────────────────────
-export function EmployerTopBar() {
-  return (
-    <View style={tbStyles.bar}>
-      <View style={{ flex: 1 }} />
-      <Image
-        source={require('../../../assets/images/align-logo.png')}
-        style={{
-          width: 90,
-          height: 28,
-          resizeMode: 'contain',
-        }}
-      />
-      <View style={{ flex: 1, alignItems: 'flex-end' }}>
-        <TouchableOpacity style={tbStyles.bell} activeOpacity={0.7}>
-          <BellIcon size={24} color="#1A1A2E" dot={true} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
-
-const tbStyles = StyleSheet.create({
-  bar: {
-    height: 56,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F2FF',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  logo: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: '#EEF0FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brand: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 17,
-    fontFamily: 'PlusJakartaSans_800ExtraBold',
-    color: '#3B43A7',
-    letterSpacing: 1,
-  },
-  bell: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-});
 
 // ─── FAB component ────────────────────────────────────────────────────────────
 function FAB({ onPress }: { onPress: () => void }) {
@@ -126,6 +78,7 @@ function JobsInner() {
   const [chatOpen, setChatOpen] = useState(false);
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [chatCandidate, setChatCandidate] = useState<PipelineCandidate | null>(null);
+  const [showProfileSheet, setShowProfileSheet] = useState(false);
 
   const handleCandidatePress = useCallback((c: PipelineCandidate) => {
     dispatch({ type: 'SELECT_CANDIDATE', candidate: c });
@@ -175,7 +128,11 @@ function JobsInner() {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-        <EmployerTopBar />
+        <AppTopBar
+          hasNotification={true}
+          onBellPress={() => {}}
+          onAvatarPress={() => setShowProfileSheet(true)}
+        />
         <View style={styles.emptyState}>
           <Text style={styles.emptyIcon}>📋</Text>
           <Text style={styles.emptyTitle}>No roles posted yet</Text>
@@ -195,7 +152,11 @@ function JobsInner() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <EmployerTopBar />
+      <AppTopBar
+        hasNotification={true}
+        onBellPress={() => {}}
+        onAvatarPress={() => setShowProfileSheet(true)}
+      />
 
       {/* Sticky header — job title + stage chips */}
       <View style={styles.headerWrap}>
@@ -276,6 +237,12 @@ function JobsInner() {
         otherUserName={chatCandidate?.candidateName ?? 'Candidate'}
         jobTitle={selectedJob.roleTitle}
         onClose={() => { setChatOpen(false); setActiveConvId(null); setChatCandidate(null); }}
+      />
+      
+      {/* Profile Sheet */}
+      <EmployerProfileSheet
+        visible={showProfileSheet}
+        onClose={() => setShowProfileSheet(false)}
       />
     </SafeAreaView>
   );

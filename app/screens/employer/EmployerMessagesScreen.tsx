@@ -23,7 +23,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { getConversations, ConversationRow } from '../../lib/database';
 import { supabase } from '../../lib/supabase';
-import { EmployerTopBar } from './JobsScreen';
+import AppTopBar from '../../components/shared/AppTopBar';
+import EmployerProfileSheet from '../../components/employer/EmployerProfileSheet';
 import ChatScreen from '../ChatScreen';
 
 const FILTERS = ['All', 'Candidates', 'Assessments', 'Interviews'];
@@ -101,6 +102,7 @@ export default function EmployerMessagesScreen() {
   // Chat modal state
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedConv, setSelectedConv] = useState<ConversationRow | null>(null);
+  const [showProfileSheet, setShowProfileSheet] = useState(false);
 
   // ── Load conversations ───────────────────────────────────────────────────
   const load = useCallback(async () => {
@@ -140,7 +142,11 @@ export default function EmployerMessagesScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <EmployerTopBar />
+      <AppTopBar
+        hasNotification={true}
+        onBellPress={() => {}}
+        onAvatarPress={() => setShowProfileSheet(true)}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -211,6 +217,12 @@ export default function EmployerMessagesScreen() {
         otherUserName={selectedConv?.candidate?.full_name ?? 'Candidate'}
         jobTitle={selectedConv?.job?.role_title}
         onClose={() => { setChatOpen(false); setSelectedConv(null); load(); }}
+      />
+      
+      {/* Profile Sheet */}
+      <EmployerProfileSheet
+        visible={showProfileSheet}
+        onClose={() => setShowProfileSheet(false)}
       />
     </SafeAreaView>
   );

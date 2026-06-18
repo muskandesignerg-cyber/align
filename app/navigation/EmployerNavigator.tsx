@@ -1,25 +1,22 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import JobsScreen from '../screens/employer/JobsScreen';
 import CandidatesScreen from '../screens/employer/CandidatesScreen';
 import EmployerMessagesScreen from '../screens/employer/EmployerMessagesScreen';
-import EmployerSettingsScreen from '../screens/employer/EmployerSettingsScreen';
 import AssessmentBuilderScreen from '../screens/employer/AssessmentBuilderScreen';
 import EmployerAnalyticsScreen from '../screens/employer/EmployerAnalyticsScreen';
 import { EmployerProvider } from '../context/EmployerContext';
-import EmployerFloatingNavBar from '../components/employer/EmployerFloatingNavBar';
-import { PipelineCandidate } from '../types/employer';
-import { JobPosting } from '../types/employer';
+import { PipelineCandidate, JobPosting } from '../types/employer';
 
 // ─── Param lists ──────────────────────────────────────────────────────────────
 
 export type EmployerTabParamList = {
   Candidates: undefined;
   Jobs:       undefined;
-  Analytics:  undefined;
   EMessages:  undefined;
-  ESettings:  undefined;
+  Analytics:  undefined;
 };
 
 export type EmployerStackParamList = {
@@ -35,14 +32,76 @@ function EmployerTabs() {
   return (
     <Tab.Navigator
       initialRouteName="Candidates"
-      tabBar={(props) => <EmployerFloatingNavBar {...props} />}
-      screenOptions={{ headerShown: false }}
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: '#FFFFFF',
+          borderTopColor: '#F0F2FF',
+          borderTopWidth: 1,
+          height: 64 + 34,
+          paddingBottom: 34,
+          paddingTop: 10,
+          elevation: 0,
+          shadowColor: '#4C59D7',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.06,
+          shadowRadius: 16,
+        },
+        tabBarActiveTintColor: '#4C59D7',
+        tabBarInactiveTintColor: '#6B7280',
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+        },
+        tabBarItemStyle: {
+          paddingTop: 4,
+        },
+      }}
     >
-      <Tab.Screen name="Candidates" component={CandidatesScreen} />
-      <Tab.Screen name="Jobs"       component={JobsScreen} />
-      <Tab.Screen name="Analytics"  component={EmployerAnalyticsScreen} />
-      <Tab.Screen name="EMessages"  component={EmployerMessagesScreen} />
-      <Tab.Screen name="ESettings"  component={EmployerSettingsScreen} />
+      {/* Tab 1 — Dashboard (Pipeline/Candidates) */}
+      <Tab.Screen 
+        name="Candidates" 
+        component={CandidatesScreen} 
+        options={{
+          tabBarLabel: 'Dashboard',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'grid' : 'grid-outline'} size={24} color={color} />
+          ),
+        }}
+      />
+      {/* Tab 2 — Post Role (JobsScreen) */}
+      <Tab.Screen 
+        name="Jobs" 
+        component={JobsScreen} 
+        options={{
+          tabBarLabel: 'Post Role',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'add-circle' : 'add-circle-outline'} size={24} color={color} />
+          ),
+        }}
+      />
+      {/* Tab 3 — Messages */}
+      <Tab.Screen 
+        name="EMessages" 
+        component={EmployerMessagesScreen} 
+        options={{
+          tabBarLabel: 'Messages',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'chatbubble' : 'chatbubble-outline'} size={24} color={color} />
+          ),
+        }}
+      />
+      {/* Tab 4 — Analytics */}
+      <Tab.Screen 
+        name="Analytics" 
+        component={EmployerAnalyticsScreen} 
+        options={{
+          tabBarLabel: 'Analytics',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'bar-chart' : 'bar-chart-outline'} size={24} color={color} />
+          ),
+        }}
+      />
     </Tab.Navigator>
   );
 }
@@ -53,7 +112,6 @@ const Stack = createNativeStackNavigator<EmployerStackParamList>();
 
 /**
  * EmployerNavigator — wraps employer tabs + modal screens.
- * Uses EmployerFloatingNavBar instead of the system tab bar.
  */
 export default function EmployerNavigator() {
   return (
