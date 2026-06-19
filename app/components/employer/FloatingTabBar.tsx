@@ -95,11 +95,13 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
 const S = StyleSheet.create({
   wrapper: {
     position: 'absolute',
-    bottom: 24, // Float above bottom
-    left: 16,
-    right: 16, // Don't touch edges
-    backgroundColor: 'transparent',
-    alignItems: 'stretch',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingBottom: 24, // Keep the same visual lift
+    paddingTop: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF', // Block text from showing behind
     zIndex: 999,
   },
   pill: {
