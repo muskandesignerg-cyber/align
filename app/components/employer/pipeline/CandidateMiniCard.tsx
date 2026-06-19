@@ -5,6 +5,36 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+const AVATAR_COLORS = [
+  { bg: '#EEF0FF', text: '#4C59D7' },
+  { bg: '#FFF0F6', text: '#C2185B' },
+  { bg: '#F0FFF4', text: '#2E7D32' },
+  { bg: '#FFF8E6', text: '#E65100' },
+  { bg: '#F3E5FF', text: '#6A1B9A' },
+  { bg: '#E0F7FA', text: '#00695C' },
+];
+
+const getAvatarColor = (index: number) =>
+  AVATAR_COLORS[index % AVATAR_COLORS.length];
+
+const getMatchStyle = (score: number) => {
+  if (score >= 85) return {
+    color: '#22C55E',
+    bg: '#F0FFF4',
+    border: '#86EFAC',
+  };
+  if (score >= 70) return {
+    color: '#4C59D7',
+    bg: '#EEF0FF',
+    border: '#849CFF',
+  };
+  return {
+    color: '#F57C00',
+    bg: '#FFF8E6',
+    border: '#FCD34D',
+  };
+};
+
 interface Candidate {
   id: string
   candidateName: string
@@ -17,43 +47,38 @@ interface Candidate {
 
 interface Props {
   candidate: Candidate
+  index: number
   onViewProfile: (c: Candidate) => void
   onThreeDot: (c: Candidate) => void
 }
 
 export default function CandidateMiniCard({
   candidate,
+  index,
   onViewProfile,
   onThreeDot,
 }: Props) {
 
-  // Always show initials from name
   const getInitials = (name: string) => {
     const parts = name.trim().split(' ');
     if (parts.length >= 2) {
       return (
-        parts[0].charAt(0) +
-        parts[1].charAt(0)
+        parts[0][0] + parts[1][0]
       ).toUpperCase();
     }
-    return parts[0].charAt(0).toUpperCase();
+    return parts[0][0].toUpperCase();
   };
 
   const initials = getInitials(
     candidate.candidateName
   );
-
-  // Show max 2 skills + overflow count
+  const avatarColor = getAvatarColor(index);
+  const matchStyle = getMatchStyle(
+    candidate.matchScore
+  );
   const visibleSkills = candidate.skills
     .slice(0, 2);
-  const extraCount = candidate.skills.length - 2;
-
-  // Match score color logic
-  const getMatchColor = (score: number) => {
-    if (score >= 85) return '#22C55E';
-    if (score >= 70) return '#4C59D7';
-    return '#F57C00';
-  };
+  const extra = candidate.skills.length - 2;
 
   return (
     <TouchableOpacity
@@ -62,17 +87,21 @@ export default function CandidateMiniCard({
       activeOpacity={0.75}
     >
 
-      {/* ── ROW 1: Avatar + Name + 3-dot ── */}
-      <View style={styles.topRow}>
+      {/* ROW 1: Avatar + Name + 3-dot */}
+      <View style={styles.row1}>
 
-        {/* Avatar */}
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
+        <View style={[
+          styles.avatar,
+          { backgroundColor: avatarColor.bg }
+        ]}>
+          <Text style={[
+            styles.initials,
+            { color: avatarColor.text }
+          ]}>
             {initials}
           </Text>
         </View>
 
-        {/* Name + Title */}
         <View style={styles.nameBlock}>
           <Text
             style={styles.name}
@@ -81,76 +110,69 @@ export default function CandidateMiniCard({
             {candidate.candidateName}
           </Text>
           <Text
-            style={styles.title}
+            style={styles.jobTitle}
             numberOfLines={1}
           >
             {candidate.candidateTitle}
           </Text>
         </View>
 
-        {/* Three dot menu */}
         <TouchableOpacity
-          style={styles.threeDot}
+          style={styles.threeDotBtn}
           onPress={() => onThreeDot(candidate)}
           hitSlop={{
-            top: 8, bottom: 8,
-            left: 8, right: 8
+            top: 10, bottom: 10,
+            left: 10, right: 10,
           }}
         >
           <Ionicons
             name="ellipsis-vertical"
             size={16}
-            color="#6B7280"
+            color="#9CA3AF"
           />
         </TouchableOpacity>
 
       </View>
 
-      {/* ── ROW 2: Skills + Match Score ── */}
-      <View style={styles.bottomRow}>
+      {/* ROW 2: Skills + Match */}
+      <View style={styles.row2}>
 
-        {/* Skills */}
-        <View style={styles.skillsRow}>
-          {visibleSkills.map((skill, i) => (
+        <View style={styles.skillsWrap}>
+          {visibleSkills.map((s, i) => (
             <View key={i} style={styles.chip}>
               <Text style={styles.chipText}>
-                {skill}
+                {s}
               </Text>
             </View>
           ))}
-          {extraCount > 0 && (
+          {extra > 0 && (
             <View style={styles.chip}>
-              <Text style={styles.chipText}>
-                +{extraCount}
+              <Text style={[
+                styles.chipText,
+                { color: '#6B7280' }
+              ]}>
+                +{extra}
               </Text>
             </View>
           )}
         </View>
 
-        {/* Match Score */}
         <View style={[
           styles.matchBadge,
           {
-            backgroundColor:
-              getMatchColor(candidate.matchScore)
-                + '15'
+            backgroundColor: matchStyle.bg,
+            borderColor: matchStyle.border,
           }
         ]}>
           <Ionicons
             name="star"
             size={10}
-            color={
-              getMatchColor(candidate.matchScore)
-            }
+            color={matchStyle.color}
             style={{ marginRight: 3 }}
           />
           <Text style={[
             styles.matchText,
-            {
-              color: getMatchColor(
-                candidate.matchScore
-              )
-            }
+            { color: matchStyle.color }
           ]}>
             {candidate.matchScore}% Match
           </Text>
@@ -168,18 +190,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E8EAFF',
+    borderColor: '#EBEBF0',
     padding: 16,
-    shadowColor: '#4C59D7',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
     marginBottom: 12,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
 
-  // Row 1
-  topRow: {
+  row1: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
@@ -189,18 +210,16 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#4C59D7',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
     flexShrink: 0,
   },
 
-  avatarText: {
+  initials: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#FFFFFF',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
 
   nameBlock: {
@@ -211,51 +230,47 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#1A1A2E',
-    lineHeight: 22,
   },
 
-  title: {
+  jobTitle: {
     fontSize: 13,
     fontWeight: '400',
     color: '#6B7280',
     marginTop: 2,
   },
 
-  threeDot: {
+  threeDotBtn: {
     width: 32,
     height: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 4,
   },
 
-  // Row 2
-  bottomRow: {
+  row2: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
 
-  skillsRow: {
+  skillsWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
     gap: 6,
     flex: 1,
     marginRight: 8,
   },
 
   chip: {
-    backgroundColor: '#F4F6FF',
+    backgroundColor: '#F8F9FF',
     borderWidth: 1,
     borderColor: '#E8EAFF',
     borderRadius: 6,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 4,
   },
 
   chipText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
     color: '#4C59D7',
   },
@@ -264,7 +279,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 20,
-    paddingHorizontal: 10,
+    borderWidth: 1,
+    paddingHorizontal: 9,
     paddingVertical: 5,
     flexShrink: 0,
   },

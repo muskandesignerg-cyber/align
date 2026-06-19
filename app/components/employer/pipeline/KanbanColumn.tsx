@@ -48,13 +48,61 @@ export default function KanbanColumn({
 
       {/* Candidate cards */}
       <View style={styles.cardList}>
-        {candidates.map((c) => (
+        {candidates.map((c, index) => (
           <CandidateMiniCard
             key={c.id}
             candidate={c}
-            onPress={onCandidatePress}
-            onMove={onMoveCandidate}
-            onDismiss={onDismissCandidate}
+            index={index}
+            onViewProfile={onCandidatePress}
+            onThreeDot={(c) => {
+              const { Alert, ActionSheetIOS, Platform } = require('react-native');
+              const moveStages = ['new_matches', 'testing', 'interview', 'hired', 'rejected'] as PipelineStage[];
+              const stageLabels: Record<PipelineStage, string> = {
+                new_matches: 'New Matches',
+                testing: 'Testing',
+                interview: 'Interview',
+                hired: 'Hired',
+                rejected: 'Rejected',
+              };
+              
+              if (Platform.OS === 'ios') {
+                ActionSheetIOS.showActionSheetWithOptions(
+                  {
+                    options: ['View Profile', 'Move to Stage', 'Reject', 'Cancel'],
+                    destructiveButtonIndex: 2,
+                    cancelButtonIndex: 3,
+                  },
+                  (idx: number) => {
+                    if (idx === 0) onCandidatePress(c);
+                    if (idx === 1) {
+                      ActionSheetIOS.showActionSheetWithOptions(
+                        {
+                          options: [...moveStages.filter(s => s !== c.stage).map(s => stageLabels[s]), 'Cancel'],
+                          cancelButtonIndex: moveStages.length - 1,
+                        },
+                        (stageIdx: number) => {
+                          const stagesFiltered = moveStages.filter(s => s !== c.stage);
+                          if (stageIdx < stagesFiltered.length) {
+                            onMoveCandidate(c.id, c.stage, stagesFiltered[stageIdx]);
+                          }
+                        }
+                      );
+                    }
+                    if (idx === 2) onDismissCandidate(c.id);
+                  }
+                );
+              } else {
+                Alert.alert(
+                  c.candidateName,
+                  'Choose an action',
+                  [
+                    { text: 'View Profile', onPress: () => onCandidatePress(c) },
+                    { text: 'Reject', style: 'destructive', onPress: () => onDismissCandidate(c.id) },
+                    { text: 'Cancel', style: 'cancel' },
+                  ]
+                );
+              }
+            }}
           />
         ))}
         {candidates.length === 0 && (

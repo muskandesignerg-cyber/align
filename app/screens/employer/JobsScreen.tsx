@@ -257,10 +257,11 @@ function JobsInner() {
       >
 
         {/* Cards */}
-        {candidates.map((c) => (
+        {candidates.map((c, index) => (
           <CandidateMiniCard
             key={c.id}
             candidate={c}
+            index={index}
             onViewProfile={handleCandidatePress}
             onThreeDot={handleThreeDot}
           />
