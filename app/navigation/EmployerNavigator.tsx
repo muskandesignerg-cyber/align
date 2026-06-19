@@ -1,6 +1,6 @@
 import React from 'react';
 import { Platform } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import JobsScreen from '../screens/employer/JobsScreen';
@@ -8,6 +8,7 @@ import CandidatesScreen from '../screens/employer/CandidatesScreen';
 import EmployerMessagesScreen from '../screens/employer/EmployerMessagesScreen';
 import AssessmentBuilderScreen from '../screens/employer/AssessmentBuilderScreen';
 import EmployerAnalyticsScreen from '../screens/employer/EmployerAnalyticsScreen';
+import FloatingTabBar from '../components/employer/FloatingTabBar';
 import { EmployerProvider } from '../context/EmployerContext';
 import { PipelineCandidate, JobPosting } from '../types/employer';
 
@@ -33,30 +34,9 @@ function EmployerTabs() {
   return (
     <Tab.Navigator
       initialRouteName="Candidates"
+      tabBar={(props: BottomTabBarProps) => <FloatingTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopColor: '#F0F2FF',
-          borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 98 : 65,
-          paddingBottom: Platform.OS === 'ios' ? 34 : 10,
-          paddingTop: 10,
-          elevation: 0,
-          shadowColor: '#4C59D7',
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.06,
-          shadowRadius: 16,
-        },
-        tabBarActiveTintColor: '#4C59D7',
-        tabBarInactiveTintColor: '#6B7280',
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-        },
-        tabBarItemStyle: {
-          paddingTop: 4,
-        },
       }}
     >
       {/* Tab 1 — Dashboard (Pipeline/Candidates) */}
