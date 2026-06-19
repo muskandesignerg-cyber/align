@@ -272,6 +272,9 @@ function JobsInner() {
             <Text style={styles.emptyColText}>No candidates in this stage</Text>
           </View>
         )}
+
+        {/* Guaranteed bottom padding for FAB */}
+        <View style={{ height: 180 }} />
       </ScrollView>
 
       {/* FAB */}
@@ -326,8 +329,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 180,
-    gap: 12,
   },
 
   // Column header

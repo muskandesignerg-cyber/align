@@ -60,13 +60,15 @@ export default function CandidateMiniCard({
 }: Props) {
 
   const getInitials = (name: string) => {
+    if (!name) return '??';
     const parts = name.trim().split(' ');
-    if (parts.length >= 2) {
-      return (
-        parts[0][0] + parts[1][0]
-      ).toUpperCase();
+    if (parts.length >= 2 && parts[0].length > 0 && parts[1].length > 0) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
     }
-    return parts[0][0].toUpperCase();
+    if (parts.length > 0 && parts[0].length > 0) {
+      return parts[0][0].toUpperCase();
+    }
+    return '??';
   };
 
   const initials = getInitials(
@@ -76,9 +78,8 @@ export default function CandidateMiniCard({
   const matchStyle = getMatchStyle(
     candidate.matchScore
   );
-  const visibleSkills = candidate.skills
-    .slice(0, 2);
-  const extra = candidate.skills.length - 2;
+  const visibleSkills = (candidate.skills || []).slice(0, 2);
+  const extra = (candidate.skills || []).length - 2;
 
   return (
     <TouchableOpacity
