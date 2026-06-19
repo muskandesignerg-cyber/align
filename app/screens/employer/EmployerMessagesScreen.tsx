@@ -23,7 +23,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { getConversations, ConversationRow } from '../../lib/database';
 import { supabase } from '../../lib/supabase';
-import AppTopBar from '../../components/shared/AppTopBar';
+import EmployerTopBar from '../../components/employer/EmployerTopBar';
 import EmployerProfileSheet from '../../components/employer/EmployerProfileSheet';
 import ChatScreen from '../ChatScreen';
 
@@ -142,10 +142,10 @@ export default function EmployerMessagesScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <AppTopBar
+      <EmployerTopBar
         hasNotification={true}
+        onProfilePress={() => setShowProfileSheet(true)}
         onBellPress={() => {}}
-        onAvatarPress={() => setShowProfileSheet(true)}
       />
 
       <ScrollView

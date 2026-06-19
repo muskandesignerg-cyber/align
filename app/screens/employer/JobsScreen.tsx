@@ -25,7 +25,7 @@ import CandidateMiniCard from '../../components/employer/pipeline/CandidateMiniC
 import CandidateDetailSheet from '../../components/employer/candidate-detail/CandidateDetailSheet';
 import PostRoleSheet from '../../components/employer/post-role/PostRoleSheet';
 import JobHeader from '../../components/employer/pipeline/JobHeader';
-import AppTopBar from '../../components/shared/AppTopBar';
+import EmployerTopBar from '../../components/employer/EmployerTopBar';
 import EmployerProfileSheet from '../../components/employer/EmployerProfileSheet';
 
 
@@ -152,10 +152,10 @@ function JobsInner() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <AppTopBar
+      <EmployerTopBar
         hasNotification={true}
+        onProfilePress={() => setShowProfileSheet(true)}
         onBellPress={() => {}}
-        onAvatarPress={() => setShowProfileSheet(true)}
       />
 
       {/* Sticky header — job title + stage chips */}

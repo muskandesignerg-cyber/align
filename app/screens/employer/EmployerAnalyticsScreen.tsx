@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Rect, Circle, Path, Defs, LinearGradient, Stop, G, Line, Text as SvgText } from 'react-native-svg';
 import { TrendingUp, Users, Briefcase, Award, ChevronRight } from 'lucide-react-native';
 import { useEmployer } from '../../context/EmployerContext';
-import AppTopBar from '../../components/shared/AppTopBar';
+import EmployerTopBar from '../../components/employer/EmployerTopBar';
 import EmployerProfileSheet from '../../components/employer/EmployerProfileSheet';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -285,10 +285,10 @@ export default function EmployerAnalyticsScreen() {
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor="#F7F7FB" />
-      <AppTopBar
+      <EmployerTopBar
         hasNotification={true}
+        onProfilePress={() => setShowProfileSheet(true)}
         onBellPress={() => {}}
-        onAvatarPress={() => setShowProfileSheet(true)}
       />
 
       {/* Page header */}

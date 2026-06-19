@@ -174,6 +174,8 @@ import ChatScreen from '../ChatScreen';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { EmployerStackParamList } from '../../navigation/EmployerNavigator';
+import EmployerTopBar from '../../components/employer/EmployerTopBar';
+import { supabase } from '../../lib/supabase';
 
 // ─── Main Screen ───────────────────────────────────────────────────────────────
 
@@ -183,7 +185,14 @@ export default function CandidatesScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<EmployerStackParamList>>();
 
   const firstName = profile?.first_name || user?.user_metadata?.first_name || 'Rahul';
-  const companyName = profile?.company_name || 'Company Name';
+  const [companyName, setCompanyName] = useState('Exposys');
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const name = data.user?.user_metadata?.company_name || 'Exposys';
+      setCompanyName(name);
+    });
+  }, []);
 
   const [activeTab, setActiveTab] = useState<TabKey>('newMatches');
   const [movingId,   setMovingId]   = useState<string | null>(null);
@@ -351,10 +360,10 @@ export default function CandidatesScreen() {
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* ── HEADER ─────────────────────────────────────────────────────── */}
-      <AppTopBar
+      <EmployerTopBar
         hasNotification={true}
+        onProfilePress={() => setShowProfileSheet(true)}
         onBellPress={() => {}}
-        onAvatarPress={() => setShowProfileSheet(true)}
       />
 
       {/* ── SCROLLABLE BODY ─────────────────────────────────────────────── */}
@@ -363,7 +372,7 @@ export default function CandidatesScreen() {
         {/* SECTION A — Greeting */}
         <View style={S.greetingSection}>
           <View>
-            <Text style={S.hiText}>Hi, {firstName}! 👋</Text>
+            <Text style={S.hiText}>Hi, {firstName}!</Text>
             <Text style={S.companyText}>{companyName}</Text>
           </View>
         </View>
