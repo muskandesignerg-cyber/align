@@ -26,25 +26,25 @@ export default function EmployerTopBar({
 
         {/* RIGHT — Profile + Bell */}
         <View style={styles.rightIcons}>
-          {/* Person icon — no background */}
-          <TouchableOpacity
-            style={styles.iconTouch}
-            onPress={onProfilePress}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="person-circle-outline" size={28} color="#1A1A2E" />
-          </TouchableOpacity>
-
-          {/* Bell icon — keep box style */}
+          {/* Bell icon */}
           <TouchableOpacity
             style={styles.iconTouch}
             onPress={onBellPress}
             activeOpacity={0.7}
           >
             <View style={styles.bellBox}>
-              <Ionicons name="notifications-outline" size={18} color="#1A1A2E" />
+              <Ionicons name="notifications-outline" size={24} color="#1A1A2E" />
               {hasNotification && <View style={styles.notifDot} />}
             </View>
+          </TouchableOpacity>
+
+          {/* Person icon */}
+          <TouchableOpacity
+            style={styles.iconTouch}
+            onPress={onProfilePress}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="person-circle-outline" size={28} color="#1A1A2E" />
           </TouchableOpacity>
         </View>
       </View>
@@ -79,26 +79,23 @@ const styles = StyleSheet.create({
   rightIcons: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 12,
   },
   iconTouch: {
-    width: 44,
-    height: 44,
+    padding: 4,
     justifyContent: 'center',
     alignItems: 'center',
   },
   // Bell box
   bellBox: {
-    width: 36,
-    height: 36,
     justifyContent: 'center',
     alignItems: 'center',
   },
   // Notification dot
   notifDot: {
     position: 'absolute',
-    top: 6,
-    right: 6,
+    top: 0,
+    right: 2,
     width: 8,
     height: 8,
     borderRadius: 4,
