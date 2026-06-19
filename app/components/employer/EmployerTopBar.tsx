@@ -19,7 +19,7 @@ export default function EmployerTopBar({
       <View style={styles.row}>
         {/* LEFT — Align Logo */}
         <Image
-          source={require('../../assets/images/align-logo.png')}
+          source={require('../../../assets/images/align-logo.png')}
           style={styles.logo}
           resizeMode="contain"
         />
