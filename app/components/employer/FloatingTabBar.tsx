@@ -95,17 +95,17 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
 const S = StyleSheet.create({
   wrapper: {
     position: 'absolute',
-    bottom: 0, left: 0, right: 0,
-    paddingTop: 16, paddingBottom: 20,
-    paddingHorizontal: 20,
-    backgroundColor: '#FFFFFF',
+    bottom: 24, // Float above bottom
+    left: 16,
+    right: 16, // Don't touch edges
+    backgroundColor: 'transparent',
     alignItems: 'stretch',
     zIndex: 999,
   },
   pill: {
     height: 64,
     backgroundColor: '#FFFFFF',
-    borderRadius: 22,
+    borderRadius: 32, // Full pill shape
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.06)',
     flexDirection: 'row',
