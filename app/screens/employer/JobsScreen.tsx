@@ -128,10 +128,10 @@ function JobsInner() {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-        <AppTopBar
+        <EmployerTopBar
           hasNotification={true}
+          onProfilePress={() => setShowProfileSheet(true)}
           onBellPress={() => {}}
-          onAvatarPress={() => setShowProfileSheet(true)}
         />
         <View style={styles.emptyState}>
           <Text style={styles.emptyIcon}>📋</Text>

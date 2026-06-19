@@ -24,7 +24,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { PipelineCandidate, PipelineStage } from '../../types/employer';
 import CandidateDetailSheet from '../../components/employer/candidate-detail/CandidateDetailSheet';
 import { useEmployer } from '../../context/EmployerContext';
-import AppTopBar from '../../components/shared/AppTopBar';
+
 import EmployerProfileSheet from '../../components/employer/EmployerProfileSheet';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
