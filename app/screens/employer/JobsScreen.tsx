@@ -18,8 +18,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Rect } from 'react-native-svg';
 import { BellIcon } from '../../components/ui/AppIcons';
+import FloatingTabBar from '../../components/employer/FloatingTabBar';
+import { supabase } from '../../lib/supabase';
 import { useEmployer } from '../../context/EmployerContext';
-import { PipelineCandidate, PipelineStage } from '../../types/employer';
+import { PipelineCandidate, JobPosting, PipelineStage } from '../../types/employer';
 import StageChips from '../../components/employer/pipeline/StageChips';
 import CandidateMiniCard from '../../components/employer/pipeline/CandidateMiniCard';
 import CandidateDetailSheet from '../../components/employer/candidate-detail/CandidateDetailSheet';
@@ -79,6 +81,16 @@ function JobsInner() {
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [chatCandidate, setChatCandidate] = useState<PipelineCandidate | null>(null);
   const [showProfileSheet, setShowProfileSheet] = useState(false);
+  const [companyName, setCompanyName] = useState('Exposys');
+
+  useEffect(() => {
+    supabase.auth.getUser().then(
+      ({ data }) => {
+        const name = data.user?.user_metadata?.company_name;
+        if (name) setCompanyName(name);
+      }
+    );
+  }, []);
 
   const handleCandidatePress = useCallback((c: PipelineCandidate) => {
     dispatch({ type: 'SELECT_CANDIDATE', candidate: c });
@@ -108,6 +120,60 @@ function JobsInner() {
       console.error('[Jobs] Failed to open chat:', e);
     }
   }, [user]);
+
+  const handleThreeDot = useCallback((c: PipelineCandidate) => {
+    const { Alert, ActionSheetIOS, Platform } = require('react-native');
+    const moveStages = ['new_matches', 'testing', 'interview', 'hired', 'rejected'] as PipelineStage[];
+    const stageLabels: Record<PipelineStage, string> = {
+      new_matches: 'New Matches',
+      testing: 'Testing',
+      interview: 'Interview',
+      hired: 'Hired',
+      rejected: 'Rejected',
+    };
+    
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['View Profile', 'Move to Stage', 'Message Candidate', 'Reject', 'Cancel'],
+          destructiveButtonIndex: 3,
+          cancelButtonIndex: 4,
+        },
+        (idx: number) => {
+          if (idx === 0) handleCandidatePress(c);
+          if (idx === 1) {
+            // simplified move sheet for now or dispatch
+            // ideally we'd show another sheet with the stages
+            ActionSheetIOS.showActionSheetWithOptions(
+              {
+                options: [...moveStages.filter(s => s !== c.stage).map(s => stageLabels[s]), 'Cancel'],
+                cancelButtonIndex: moveStages.length - 1,
+              },
+              (stageIdx: number) => {
+                const stagesFiltered = moveStages.filter(s => s !== c.stage);
+                if (stageIdx < stagesFiltered.length) {
+                  handleMoveCandidate(c.id, c.stage, stagesFiltered[stageIdx]);
+                }
+              }
+            );
+          }
+          if (idx === 2) handleMessage(c);
+          if (idx === 3) handleDismiss(c.id);
+        }
+      );
+    } else {
+      Alert.alert(
+        c.candidateName,
+        'Choose an action',
+        [
+          { text: 'View Profile', onPress: () => handleCandidatePress(c) },
+          { text: 'Message Candidate', onPress: () => handleMessage(c) },
+          { text: 'Reject', style: 'destructive', onPress: () => handleDismiss(c.id) },
+          { text: 'Cancel', style: 'cancel' },
+        ],
+      );
+    }
+  }, [handleCandidatePress, handleMessage, handleDismiss, handleMoveCandidate]);
 
   const selectedJob = state.jobPostings.find((j) => j.id === state.selectedJobId);
   const activeStage = state.activeStageFilter as PipelineStage;
@@ -162,7 +228,7 @@ function JobsInner() {
       <View style={styles.headerWrap}>
         <JobHeader
           roleTitle={selectedJob.roleTitle}
-          companyName={selectedJob.companyName}
+          companyName={companyName}
           candidateCount={selectedJob.candidateCount}
         />
         <StageChips
@@ -172,32 +238,31 @@ function JobsInner() {
         />
       </View>
 
+      {/* Column header (Always visible above list) */}
+      <View style={styles.colHeader}>
+        <View style={styles.colHeaderLeft}>
+          <View style={[styles.dot, { backgroundColor: stageCfg.dot }]} />
+          <Text style={styles.colTitle}>{stageCfg.label}</Text>
+        </View>
+        <View style={styles.countBadge}>
+          <Text style={styles.countText}>{candidates.length}</Text>
+        </View>
+      </View>
+
       {/* Candidate list — full width, vertical scroll */}
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Column header */}
-        <View style={styles.colHeader}>
-          <View style={styles.colHeaderLeft}>
-            <View style={[styles.dot, { backgroundColor: stageCfg.dot }]} />
-            <Text style={styles.colTitle}>{stageCfg.label}</Text>
-          </View>
-          <View style={styles.countBadge}>
-            <Text style={styles.countText}>{candidates.length}</Text>
-          </View>
-        </View>
 
         {/* Cards */}
         {candidates.map((c) => (
           <CandidateMiniCard
             key={c.id}
             candidate={c}
-            onPress={handleCandidatePress}
-            onMove={handleMoveCandidate}
-            onDismiss={handleDismiss}
-            onMessage={handleMessage}
+            onViewProfile={handleCandidatePress}
+            onThreeDot={handleThreeDot}
           />
         ))}
 
@@ -206,9 +271,6 @@ function JobsInner() {
             <Text style={styles.emptyColText}>No candidates in this stage</Text>
           </View>
         )}
-
-        {/* Bottom padding for FAB */}
-        <View style={{ height: 100 }} />
       </ScrollView>
 
       {/* FAB */}
@@ -262,18 +324,19 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 160,
-    gap: 10,
+    paddingTop: 8,
+    paddingBottom: 180,
+    gap: 12,
   },
 
-  // Column header inside scroll
+  // Column header
   colHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 4,
-    marginBottom: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#F4F5FF',
   },
   colHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   dot: { width: 8, height: 8, borderRadius: 4 },
