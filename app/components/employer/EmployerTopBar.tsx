@@ -32,7 +32,7 @@ export default function EmployerTopBar({
             onPress={onProfilePress}
             activeOpacity={0.7}
           >
-            <Ionicons name="person-circle-outline" size={28} color="#3B43A7" />
+            <Ionicons name="person-circle-outline" size={28} color="#1A1A2E" />
           </TouchableOpacity>
 
           {/* Bell icon — keep box style */}
@@ -91,8 +91,6 @@ const styles = StyleSheet.create({
   bellBox: {
     width: 36,
     height: 36,
-    backgroundColor: '#F4F6FF',
-    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
