@@ -102,6 +102,8 @@ const S = StyleSheet.create({
     paddingTop: 12,
     paddingHorizontal: 16,
     backgroundColor: '#FFFFFF', // Block text from showing behind
+    borderTopWidth: 1,
+    borderTopColor: '#F0F2FF',
     zIndex: 999,
   },
   pill: {
