@@ -1,4 +1,10 @@
-import React, { useMemo } from 'react';
+/**
+ * EmployerFloatingNavBar ΓÇö Premium pill navbar for employer screens.
+ *
+ * Tabs: Pipeline (active) ┬╖ Post Role ┬╖ Messages (red dot) ┬╖ Settings
+ */
+
+import React from 'react';
 import {
   View,
   Text,
@@ -6,123 +12,79 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 
-const TAB_CONFIG = [
+type NavItem = {
+  routeName: string;
+  label:     string;
+  icon:      keyof typeof Ionicons.glyphMap;
+  iconActive:keyof typeof Ionicons.glyphMap;
+  dot?:      boolean;
+};
+
+const NAV_ITEMS: NavItem[] = [
   {
-    name: 'Candidates',
-    label: 'Dashboard',
-    icon: 'grid-outline' as const,
-    iconActive: 'grid' as const,
+    routeName:  'Candidates',
+    label:      'Dashboard',
+    icon:       'grid-outline',
+    iconActive: 'grid-outline',
   },
   {
-    name: 'Jobs',
-    label: 'Post Role',
-    icon: 'add-circle-outline' as const,
-    iconActive: 'add-circle' as const,
+    routeName:  'Jobs',
+    label:      'Post Role',
+    icon:       'add-circle-outline',
+    iconActive: 'add-circle-outline',
   },
   {
-    name: 'EMessages',
-    label: 'Messages',
-    icon: 'chatbubble-outline' as const,
-    iconActive: 'chatbubble' as const,
-    hasNotif: true,
+    routeName:  'EMessages',
+    label:      'Messages',
+    icon:       'chatbubble-outline',
+    iconActive: 'chatbubble-outline',
+    dot:        true,
   },
   {
-    name: 'Analytics',
-    label: 'Analytics',
-    icon: 'bar-chart-outline' as const,
-    iconActive: 'bar-chart' as const,
+    routeName:  'Analytics',
+    label:      'Analytics',
+    icon:       'bar-chart-outline',
+    iconActive: 'bar-chart-outline',
   },
 ];
 
-export default function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
-  const insets = useSafeAreaInsets();
-  
-  // Create shared values for scale animation for each tab
-  const scales = useMemo(() => TAB_CONFIG.map(() => useSharedValue(1)), []);
-
+export default function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   return (
-    <View
-      style={[
-        styles.wrapper,
-        { bottom: insets.bottom + 16 }
-      ]}
-      pointerEvents="box-none"
-    >
-      <View style={styles.container}>
-        {TAB_CONFIG.map((tab, index) => {
-          const isFocused = state.index === index;
-          const scale = scales[index];
-
-          const animStyle = useAnimatedStyle(() => ({
-            transform: [{ scale: scale.value }],
-            flex: 1,
-            marginHorizontal: 2,
-          }));
+    <View style={S.wrapper} pointerEvents="box-none">
+      <View style={S.pill}>
+        {NAV_ITEMS.map((item) => {
+          const index   = state.routes.findIndex((r) => r.name === item.routeName);
+          const focused = index !== -1 && state.index === index;
 
           const onPress = () => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            
-            // Bounce the pressed tab
-            scale.value = withSpring(0.85, { damping: 10, stiffness: 300 }, () => {
-              scale.value = withSpring(1);
-            });
-
-            const event = navigation.emit({
-              type: 'tabPress',
-              target: state.routes[index]?.key,
-              canPreventDefault: true,
-            });
-
-            if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(tab.name);
+            if (index === -1) return;
+            const route = state.routes[index];
+            const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+            if (!focused && !event.defaultPrevented) {
+              navigation.navigate(route.name);
             }
           };
 
-          return (
-            <Animated.View key={tab.name} style={animStyle}>
-              <TouchableOpacity
-                onPress={onPress}
-                style={[
-                  styles.tab,
-                  isFocused && styles.tabActive,
-                ]}
-                activeOpacity={0.75}
-              >
-                <View style={styles.tabInner}>
-                  {/* Icon */}
-                  <View style={styles.iconWrap}>
-                    <Ionicons
-                      name={isFocused ? tab.iconActive : tab.icon}
-                      size={20}
-                      color={isFocused ? '#FFFFFF' : '#6B7280'}
-                    />
-                    
-                    {/* Notification dot */}
-                    {tab.hasNotif && !isFocused && (
-                      <View style={styles.notifDot} />
-                    )}
-                  </View>
-
-                  {/* Label */}
-                  <Text style={[
-                    styles.label,
-                    isFocused && styles.labelActive,
-                  ]}>
-                    {tab.label}
-                  </Text>
-                </View>
+          if (focused) {
+            return (
+              <TouchableOpacity key={item.routeName} onPress={onPress} activeOpacity={0.9} style={S.activePill}>
+                <Ionicons name={item.iconActive} size={18} color="#FFFFFF" />
+                <Text style={S.activePillLabel}>{item.label}</Text>
               </TouchableOpacity>
-            </Animated.View>
+            );
+          }
+
+          return (
+            <TouchableOpacity key={item.routeName} onPress={onPress} activeOpacity={0.7} style={S.inactiveItem}>
+              <View style={S.inactiveIconWrap}>
+                <Ionicons name={item.icon} size={22} color="#BBBBBB" />
+                {item.dot && <View style={S.dot} />}
+              </View>
+              <Text style={S.inactiveLabel}>{item.label}</Text>
+            </TouchableOpacity>
           );
         })}
       </View>
@@ -130,90 +92,66 @@ export default function FloatingTabBar({ state, navigation }: BottomTabBarProps)
   );
 }
 
-const styles = StyleSheet.create({
-  // Outer wrapper — positions the bar
+const S = StyleSheet.create({
   wrapper: {
     position: 'absolute',
-    left: 16,
-    right: 16,
-    alignItems: 'center',
-  },
-
-  // Floating pill container
-  container: {
-    flexDirection: 'row',
+    bottom: 0, left: 0, right: 0,
+    paddingTop: 16, paddingBottom: 20,
+    paddingHorizontal: 20,
     backgroundColor: '#FFFFFF',
-    borderRadius: 32,
+    alignItems: 'stretch',
+    zIndex: 999,
+  },
+  pill: {
     height: 64,
-    width: '100%',
-    paddingHorizontal: 6,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-
-    // Strong shadow — makes it float
-    shadowColor: '#1A1A2E',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.14,
-    shadowRadius: 24,
-    elevation: 16,
-
-    // Subtle border
-    borderWidth: 1,
-    borderColor: '#F0F2FF',
+    paddingHorizontal: 12,
+    ...Platform.select({
+      web: {
+        boxShadow: '0 4px 6px rgba(0,0,0,0.04), 0 10px 32px rgba(0,0,0,0.10)',
+      } as any,
+      default: {
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.12,
+        shadowRadius: 24,
+        elevation: 12,
+      },
+    }),
   },
 
-  // Each tab button
-  tab: {
-    flex: 1,
-    height: 52,
-    borderRadius: 26,
-    justifyContent: 'center',
+  // Active pill item
+  activePill: {
+    height: 42,
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-
-  // Active tab — filled purple pill
-  tabActive: {
+    gap: 7,
+    paddingHorizontal: 18,
     backgroundColor: '#4C59D7',
-    shadowColor: '#4C59D7',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.30,
-    shadowRadius: 12,
-    elevation: 8,
+    borderRadius: 14,
+    ...Platform.select({
+      web:     { boxShadow: '0 4px 14px rgba(79,70,229,0.35)' } as any,
+      default: { shadowColor: '#4C59D7', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 14, elevation: 6 },
+    }),
   },
+  activePillLabel: { fontSize: 13, fontWeight: '700', color: '#FFFFFF' },
 
-  tabInner: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 3,
-  },
+  // Inactive item
+  inactiveItem:     { alignItems: 'center', gap: 2, paddingHorizontal: 8 },
+  inactiveIconWrap: { position: 'relative' },
+  inactiveLabel:    { fontSize: 10, fontWeight: '500', color: '#BBBBBB' },
 
-  iconWrap: {
-    position: 'relative',
-  },
-
-  // Label
-  label: {
-    fontSize: 10,
-    fontWeight: '500',
-    color: '#6B7280',
-    textAlign: 'center',
-  },
-
-  labelActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-
-  // Notification dot on Messages
-  notifDot: {
-    position: 'absolute',
-    top: -2,
-    right: -4,
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: '#EF4444',
-    borderWidth: 1.5,
-    borderColor: '#FFFFFF',
+  // Messages red dot
+  dot: {
+    position: 'absolute', top: -1, right: -2,
+    width: 7, height: 7, borderRadius: 3.5,
+    backgroundColor: '#E63946',
+    borderWidth: 1.5, borderColor: '#FFFFFF',
   },
 });
