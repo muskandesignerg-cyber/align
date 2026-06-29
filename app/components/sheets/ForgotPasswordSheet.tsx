@@ -2,8 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, Modal, ActivityIndicator,
-  Platform, KeyboardAvoidingView, Animated,
+  Platform, KeyboardAvoidingView, Animated, Dimensions
 } from 'react-native';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 import { supabase } from '../../lib/supabase';
 
 interface ForgotPasswordSheetProps {
@@ -48,71 +50,72 @@ export const ForgotPasswordSheet: React.FC<ForgotPasswordSheetProps> = ({ visibl
       animationType="slide"
       onRequestClose={onClose}
     >
-      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.sheetWrap}
-      >
-        <View style={[styles.sheet, sheetShadow]}>
-          {/* Handle bar */}
-          <View style={styles.handle} />
+      <View style={styles.overlay}>
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={[styles.sheet, sheetShadow]}>
+            {/* Handle bar */}
+            <View style={styles.handle} />
 
-          {sent ? (
-            // Success state
-            <View style={styles.successBlock}>
-              <View style={styles.successIcon}>
-                <Text style={styles.successCheck}>✓</Text>
-              </View>
-              <Text style={styles.successTitle}>Email sent!</Text>
-              <Text style={styles.successSub}>Check your inbox for the reset link.</Text>
-              <TouchableOpacity style={styles.closeBtn} onPress={onClose} activeOpacity={0.8}>
-                <Text style={styles.closeBtnText}>Close</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            // Form state
-            <>
-              <Text style={styles.sheetTitle}>Reset password</Text>
-              <Text style={styles.sheetSub}>
-                Enter your email and we'll send you a reset link.
-              </Text>
-
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Email address</Text>
-                <View style={[
-                  styles.inputWrap,
-                  focused && styles.inputWrapFocused,
-                ]}>
-                  <TextInput
-                    style={styles.input as any}
-                    value={email}
-                    onChangeText={setEmail}
-                    placeholder="Enter your email"
-                    placeholderTextColor="#B0B8D0"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    onFocus={() => setFocused(true)}
-                    onBlur={() => setFocused(false)}
-                    selectionColor="#4C59D7"
-                  />
+            {sent ? (
+              // Success state
+              <View style={styles.successBlock}>
+                <View style={styles.successIcon}>
+                  <Text style={styles.successCheck}>✓</Text>
                 </View>
+                <Text style={styles.successTitle}>Email sent!</Text>
+                <Text style={styles.successSub}>Check your inbox for the reset link.</Text>
+                <TouchableOpacity style={styles.closeBtn} onPress={onClose} activeOpacity={0.8}>
+                  <Text style={styles.closeBtnText}>Close</Text>
+                </TouchableOpacity>
               </View>
+            ) : (
+              // Form state
+              <>
+                <Text style={styles.sheetTitle}>Reset password</Text>
+                <Text style={styles.sheetSub}>
+                  Enter your email and we'll send you a reset link.
+                </Text>
 
-              <TouchableOpacity
-                style={[styles.sendBtn, !canSend && styles.sendBtnDisabled]}
-                onPress={handleSend}
-                disabled={!canSend || loading}
-                activeOpacity={canSend ? 0.85 : 1}
-              >
-                {loading
-                  ? <ActivityIndicator color="#FFFFFF" size="small" />
-                  : <Text style={[styles.sendBtnText, !canSend && { opacity: 0.7 }]}>Send Reset Link</Text>}
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-      </KeyboardAvoidingView>
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.fieldLabel}>Email address</Text>
+                  <View style={[
+                    styles.inputWrap,
+                    focused && styles.inputWrapFocused,
+                  ]}>
+                    <TextInput
+                      style={styles.input as any}
+                      value={email}
+                      onChangeText={setEmail}
+                      placeholder="Enter your email"
+                      placeholderTextColor="#B0B8D0"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      onFocus={() => setFocused(true)}
+                      onBlur={() => setFocused(false)}
+                      selectionColor="#4C59D7"
+                    />
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.sendBtn, !canSend && styles.sendBtnDisabled]}
+                  onPress={handleSend}
+                  disabled={!canSend || loading}
+                  activeOpacity={canSend ? 0.85 : 1}
+                >
+                  {loading
+                    ? <ActivityIndicator color="#FFFFFF" size="small" />
+                    : <Text style={[styles.sendBtnText, !canSend && { opacity: 0.7 }]}>Send Reset Link</Text>}
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 };
@@ -123,15 +126,15 @@ const sheetShadow = Platform.select({
 });
 
 const styles = StyleSheet.create({
-  backdrop: {
-    ...StyleSheet.absoluteFill,
+  overlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
     backgroundColor: 'rgba(26,26,46,0.4)',
   },
-  sheetWrap: {
-    position: 'absolute',
-    bottom: 0, left: 0, right: 0,
-  },
   sheet: {
+    width: SCREEN_WIDTH,
+    maxWidth: SCREEN_WIDTH,
+    alignSelf: 'center',
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
