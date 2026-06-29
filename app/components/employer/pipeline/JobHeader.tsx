@@ -49,7 +49,7 @@ export default function JobHeader({ roleTitle, companyName, candidateCount }: Jo
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F4F6FF',
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 0,

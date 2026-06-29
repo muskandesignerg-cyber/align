@@ -320,12 +320,12 @@ export default function JobsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#F4F5FF' },
-  loading: { flex: 1, backgroundColor: '#F4F5FF', alignItems: 'center', justifyContent: 'center' },
+  safeArea: { flex: 1, backgroundColor: '#F4F6FF' },
+  loading: { flex: 1, backgroundColor: '#F4F6FF', alignItems: 'center', justifyContent: 'center' },
 
-  headerWrap: { backgroundColor: '#FFFFFF' },
+  headerWrap: { backgroundColor: '#F4F6FF' },
 
-  scroll: { flex: 1 },
+  scroll: { flex: 1, backgroundColor: '#F4F6FF' },
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 8,
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#F4F5FF',
+    backgroundColor: '#F4F6FF',
   },
   colHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   dot: { width: 8, height: 8, borderRadius: 4 },
