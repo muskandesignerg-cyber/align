@@ -287,9 +287,6 @@ function JobsInner() {
         )}
       />
 
-      {/* FAB */}
-      <FAB onPress={() => dispatch({ type: 'SET_SHOW_POST_ROLE', value: true })} />
-
       {/* Sheets */}
       <CandidateDetailSheet
         visible={state.showCandidateDetail}
@@ -369,6 +366,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     gap: 8,
     backgroundColor: '#FFFFFF',
+    alignItems: 'center',
   },
   chip: {
     paddingHorizontal: 14,
