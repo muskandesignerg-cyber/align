@@ -387,9 +387,9 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
   content:  { paddingBottom: 160 },
   title:    {
-    fontSize: 24,
-    fontFamily: 'PlusJakartaSans_800ExtraBold',
-    color: '#1A1A2E',
+    fontSize: 26,
+    fontFamily: 'PlusJakartaSans_700Bold',
+    color: '#0A0A0A',
     marginTop: 20,
     marginBottom: 16,
     paddingHorizontal: 20,
