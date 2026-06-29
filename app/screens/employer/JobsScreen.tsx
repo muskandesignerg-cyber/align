@@ -28,45 +28,21 @@ import { getOrCreateConversation } from '../../lib/database';
 import { useAuth } from '../../context/AuthContext';
 import ChatScreen from '../ChatScreen';
 
-// ─── FAB ──────────────────────────────────────────────────────────────────────
-function FAB({ onPress }: { onPress: () => void }) {
-  const scale = useSharedValue(0);
-  useEffect(() => {
-    scale.value = withDelay(400, withSpring(1, { mass: 1, damping: 12, stiffness: 180 }));
-  }, []);
-  const fabStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-  return (
-    <Animated.View style={[styles.fab, fabStyle, fabShadow]}>
-      <TouchableOpacity onPress={onPress} style={styles.fabInner} activeOpacity={0.85}>
-        <Text style={styles.fabIcon}>+</Text>
-      </TouchableOpacity>
-    </Animated.View>
-  );
-}
-
-const fabShadow = {
-  shadowColor: '#4C59D7',
-  shadowOffset: { width: 0, height: 8 },
-  shadowOpacity: 0.4,
-  shadowRadius: 24,
-  elevation: 8,
-} as any;
-
 // ─── Stage config ──────────────────────────────────────────────────────────────
 const STAGE_CONFIG: Record<string, { label: string; dot: string }> = {
   new_matches: { label: 'New Matches', dot: '#4C59D7' },
-  testing:     { label: 'Testing',     dot: '#F57C00' },
-  interview:   { label: 'Interview',   dot: '#849CFF' },
-  hired:       { label: 'Hired',       dot: '#22C55E' },
+  testing:     { label: 'Testing',     dot: '#F59E0B' },
+  interview:   { label: 'Interview',   dot: '#8B5CF6' },
+  hired:       { label: 'Hired',       dot: '#10B981' },
   rejected:    { label: 'Rejected',    dot: '#EF4444' },
 };
 
-const STAGE_KEYS = [
-  { key: 'new_matches' as PipelineStage, label: 'New Matches' },
-  { key: 'testing'     as PipelineStage, label: 'Testing' },
-  { key: 'interview'   as PipelineStage, label: 'Interview' },
-  { key: 'hired'       as PipelineStage, label: 'Hired' },
-  { key: 'rejected'    as PipelineStage, label: 'Rejected' },
+const STAGE_KEYS: { key: PipelineStage; label: string }[] = [
+  { key: 'new_matches', label: 'New Matches' },
+  { key: 'testing',     label: 'Testing' },
+  { key: 'interview',   label: 'Interview' },
+  { key: 'hired',       label: 'Hired' },
+  { key: 'rejected',    label: 'Rejected' },
 ];
 
 // ─── Inner screen ──────────────────────────────────────────────────────────────
@@ -161,8 +137,11 @@ function JobsInner() {
 
   const selectedJob = state.jobPostings.find((j) => j.id === state.selectedJobId);
   const activeStage = state.activeStageFilter as PipelineStage;
-  const stageCfg = STAGE_CONFIG[activeStage] ?? { label: activeStage, dot: '#6B7280' };
+  const stageCfg = STAGE_CONFIG[activeStage] ?? { label: activeStage, dot: '#4C59D7' };
   const candidates = state.pipeline[activeStage] ?? [];
+
+  // All candidates across all stages (for chip counts)
+  const allCandidates = Object.values(state.pipeline).flat();
 
   if (state.isLoading) {
     return (
@@ -189,7 +168,6 @@ function JobsInner() {
             Post your first role and start matching with top candidates.
           </Text>
         </View>
-        <FAB onPress={() => dispatch({ type: 'SET_SHOW_POST_ROLE', value: true })} />
         <PostRoleSheet
           visible={state.showPostRole}
           onClose={() => dispatch({ type: 'SET_SHOW_POST_ROLE', value: false })}
@@ -215,16 +193,17 @@ function JobsInner() {
       <View style={styles.roleSection}>
         <Text style={styles.roleName}>{selectedJob.roleTitle}</Text>
         <View style={styles.roleMetaRow}>
-          <Text style={styles.companyName}>{companyName}</Text>
+          <Text style={styles.metaText}>{companyName}</Text>
           <View style={styles.metaDot} />
-          <Text style={styles.candidateCount}>{selectedJob.candidateCount} candidates</Text>
+          <Text style={styles.metaText}>{selectedJob.candidateCount} candidates</Text>
         </View>
       </View>
 
-      {/* ── FILTER CHIPS ── */}
+      {/* ── FILTER CHIPS ── horizontal scroll, fixed height */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        style={styles.filterScroll}
         contentContainerStyle={styles.filterRow}
       >
         {STAGE_KEYS.map((s) => {
@@ -238,38 +217,30 @@ function JobsInner() {
               activeOpacity={0.75}
             >
               <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
-                {s.label}
-                {'  '}
-                <Text style={[styles.chipCount, isActive && styles.chipCountActive]}>
-                  {count}
-                </Text>
+                {s.label} {count}
               </Text>
             </TouchableOpacity>
           );
         })}
       </ScrollView>
 
-      {/* ── DIVIDER ── */}
+      {/* ── DIVIDER — zero margin ── */}
       <View style={styles.divider} />
 
-      {/* ── COUNT ROW ── */}
-      <View style={styles.countRow}>
-        <View style={styles.countLeft}>
-          <View style={[styles.activeDot, { backgroundColor: stageCfg.dot }]} />
-          <Text style={styles.activeLabel}>{stageCfg.label}</Text>
+      {/* ── SECTION HEADER — fixed padding, never changes ── */}
+      <View style={styles.sectionHeader}>
+        <View style={styles.sectionLeft}>
+          <View style={[styles.stageDot, { backgroundColor: stageCfg.dot }]} />
+          <Text style={styles.sectionLabel}>{stageCfg.label}</Text>
         </View>
-        <Text style={styles.countNumber}>{candidates.length} candidates</Text>
+        <Text style={styles.sectionCount}>{candidates.length} candidates</Text>
       </View>
 
       {/* ── CANDIDATE LIST ── */}
       <FlatList
         data={candidates}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingTop: 8,
-          paddingBottom: 160,
-        }}
+        contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         showsVerticalScrollIndicator={false}
         renderItem={({ item, index }) => (
@@ -343,7 +314,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     gap: 6,
   },
-  companyName: {
+  metaText: {
     fontSize: 13,
     fontFamily: 'PlusJakartaSans_400Regular',
     color: '#6B7280',
@@ -354,19 +325,19 @@ const styles = StyleSheet.create({
     borderRadius: 1.5,
     backgroundColor: '#9CA3AF',
   },
-  candidateCount: {
-    fontSize: 13,
-    fontFamily: 'PlusJakartaSans_400Regular',
-    color: '#6B7280',
-  },
 
-  // Filter chips
+  // Filter chips — fixed height, NO flex stretching
+  filterScroll: {
+    flexGrow: 0,         // ← key: prevents vertical expansion
+    flexShrink: 0,
+    backgroundColor: '#FFFFFF',
+  },
   filterRow: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingTop: 2,
+    paddingBottom: 10,
     gap: 8,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
+    // NO alignItems here — that was causing the huge gap
   },
   chip: {
     paddingHorizontal: 14,
@@ -375,6 +346,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#E0E0EC',
     backgroundColor: '#FFFFFF',
+    alignSelf: 'flex-start',  // ← prevents vertical stretch
   },
   chipActive: {
     backgroundColor: '#4C59D7',
@@ -389,53 +361,55 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontFamily: 'PlusJakartaSans_600SemiBold',
   },
-  chipCount: {
-    fontSize: 12,
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-    color: '#9CA3AF',
-  },
-  chipCountActive: {
-    color: 'rgba(255,255,255,0.8)' as any,
-  },
 
-  // Divider
+  // Divider — zero margin
   divider: {
     height: 1,
     backgroundColor: '#F0F0F5',
+    // NO marginTop, NO marginBottom
   },
 
-  // Count row
-  countRow: {
+  // Section header — fixed padding, NEVER changes
+  sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingTop: 12,    // fixed — same on all tabs
+    paddingBottom: 8,  // fixed — same on all tabs
     backgroundColor: '#FFFFFF',
+    // NO marginTop
   },
-  countLeft: {
+  sectionLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
-  activeDot: {
+  stageDot: {
     width: 7,
     height: 7,
     borderRadius: 3.5,
   },
-  activeLabel: {
+  sectionLabel: {
     fontSize: 13,
     fontFamily: 'PlusJakartaSans_600SemiBold',
     color: '#1A1A2E',
   },
-  countNumber: {
+  sectionCount: {
     fontSize: 12,
     fontFamily: 'PlusJakartaSans_400Regular',
     color: '#9CA3AF',
   },
 
+  // FlatList content
+  listContent: {
+    paddingHorizontal: 16,
+    paddingTop: 8,      // fixed — same on all tabs
+    paddingBottom: 160,
+  },
+
   // Empty states
-  emptyCol: { paddingVertical: 48, alignItems: 'center' },
+  emptyCol: { paddingTop: 40, alignItems: 'center' },
   emptyColText: {
     fontSize: 14,
     fontFamily: 'PlusJakartaSans_400Regular',
@@ -462,23 +436,4 @@ const styles = StyleSheet.create({
     marginTop: 8,
     lineHeight: 22,
   },
-
-  // FAB
-  fab: {
-    position: 'absolute',
-    bottom: 90,
-    right: 20,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-  },
-  fabInner: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#4C59D7',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  fabIcon: { fontSize: 26, color: '#FFFFFF', lineHeight: 28, marginTop: -2 },
 });
