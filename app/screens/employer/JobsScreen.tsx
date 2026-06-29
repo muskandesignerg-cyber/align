@@ -1,13 +1,13 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  FlatList,
   ActivityIndicator,
   StatusBar,
-  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -224,58 +224,83 @@ function JobsInner() {
         onBellPress={() => {}}
       />
 
-      {/* Sticky header — job title + stage chips */}
-      <View style={styles.headerWrap}>
-        <JobHeader
-          roleTitle={selectedJob.roleTitle}
-          companyName={companyName}
-          candidateCount={selectedJob.candidateCount}
-        />
-        <StageChips
-          activeStage={state.activeStageFilter}
-          counts={stageCounts}
-          onSelect={(stage) => dispatch({ type: 'SET_STAGE_FILTER', stage })}
-        />
+      {/* ── ROLE HEADER ── */}
+      <View style={styles.header}>
+        <Text style={styles.roleTitle}>{selectedJob.roleTitle}</Text>
+        <Text style={styles.companyName}>{companyName}</Text>
+        <Text style={styles.candidateCount}>{selectedJob.candidateCount} candidates</Text>
       </View>
 
-      {/* Column header (Always visible above list) */}
-      <View style={styles.colHeader}>
-        <View style={styles.colHeaderLeft}>
+      {/* ── FILTER CHIPS ── */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.filterScroll}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 4, gap: 8 }}
+      >
+        {([
+          { key: 'new_matches', label: 'New Matches' },
+          { key: 'testing',     label: 'Testing' },
+          { key: 'interview',   label: 'Interview' },
+          { key: 'hired',       label: 'Hired' },
+          { key: 'rejected',    label: 'Rejected' },
+        ] as { key: PipelineStage; label: string }[]).map((s) => {
+          const count = stageCounts[s.key] ?? 0;
+          const isActive = activeStage === s.key;
+          return (
+            <TouchableOpacity
+              key={s.key}
+              style={[styles.filterChip, isActive && styles.filterChipActive]}
+              onPress={() => dispatch({ type: 'SET_STAGE_FILTER', stage: s.key })}
+              activeOpacity={0.75}
+            >
+              <Text style={[styles.filterChipText, isActive && styles.filterChipTextActive]}>
+                {s.label} {count}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
+      {/* ── SECTION HEADER ── */}
+      <View style={styles.sectionHeader}>
+        <View style={styles.sectionLeft}>
           <View style={[styles.dot, { backgroundColor: stageCfg.dot }]} />
-          <Text style={styles.colTitle}>{stageCfg.label}</Text>
+          <Text style={styles.sectionTitle}>{stageCfg.label}</Text>
         </View>
         <View style={styles.countBadge}>
-          <Text style={styles.countText}>{candidates.length}</Text>
+          <Text style={styles.countBadgeText}>{candidates.length}</Text>
         </View>
       </View>
 
-      {/* Candidate list — full width, vertical scroll */}
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      {/* ── DIVIDER ── */}
+      <View style={styles.divider} />
 
-        {/* Cards */}
-        {candidates.map((c, index) => (
+      {/* ── CANDIDATE LIST ── */}
+      <FlatList
+        data={candidates}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 12,
+          paddingBottom: 180,
+        }}
+        ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item, index }) => (
           <CandidateMiniCard
-            key={c.id}
-            candidate={c}
+            candidate={item}
             index={index}
             onViewProfile={handleCandidatePress}
             onThreeDot={handleThreeDot}
           />
-        ))}
-
-        {candidates.length === 0 && (
+        )}
+        ListEmptyComponent={() => (
           <View style={styles.emptyCol}>
             <Text style={styles.emptyColText}>No candidates in this stage</Text>
           </View>
         )}
-
-        {/* Guaranteed bottom padding for FAB */}
-        <View style={{ height: 180 }} />
-      </ScrollView>
+      />
 
       {/* FAB */}
       <FAB onPress={() => dispatch({ type: 'SET_SHOW_POST_ROLE', value: true })} />
@@ -304,7 +329,7 @@ function JobsInner() {
         jobTitle={selectedJob.roleTitle}
         onClose={() => { setChatOpen(false); setActiveConvId(null); setChatCandidate(null); }}
       />
-      
+
       {/* Profile Sheet */}
       <EmployerProfileSheet
         visible={showProfileSheet}
@@ -320,52 +345,101 @@ export default function JobsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#F4F6FF' },
-  loading: { flex: 1, backgroundColor: '#F4F6FF', alignItems: 'center', justifyContent: 'center' },
+  safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
+  loading: { flex: 1, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
 
-  headerWrap: { backgroundColor: '#F4F6FF' },
-
-  scroll: { flex: 1, backgroundColor: '#F4F6FF' },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
+  // Role header
+  header: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 16,
+  },
+  roleTitle: {
+    fontSize: 24,
+    fontFamily: 'PlusJakartaSans_700Bold',
+    color: '#1A1A2E',
+    lineHeight: 32,
+  },
+  companyName: {
+    fontSize: 14,
+    fontFamily: 'PlusJakartaSans_400Regular',
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  candidateCount: {
+    fontSize: 13,
+    fontFamily: 'PlusJakartaSans_400Regular',
+    color: '#6B7280',
+    marginTop: 12,
   },
 
-  // Column header
-  colHeader: {
+  // Filter chips
+  filterScroll: { backgroundColor: '#FFFFFF', maxHeight: 52 },
+  filterChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#E0E0E8',
+    backgroundColor: '#FFFFFF',
+  },
+  filterChipActive: {
+    backgroundColor: '#4C59D7',
+    borderColor: '#4C59D7',
+  },
+  filterChipText: {
+    fontSize: 13,
+    fontFamily: 'PlusJakartaSans_500Medium',
+    color: '#1A1A2E',
+  },
+  filterChipTextActive: {
+    color: '#FFFFFF',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
+  },
+
+  // Section header
+  sectionHeader: {
+    backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#F4F6FF',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 4,
   },
-  colHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  colTitle: {
-    fontSize: 16,
+  sectionLeft: { flexDirection: 'row', alignItems: 'center' },
+  dot: { width: 8, height: 8, borderRadius: 4, marginRight: 8 },
+  sectionTitle: {
+    fontSize: 15,
     fontFamily: 'PlusJakartaSans_700Bold',
     color: '#1A1A2E',
   },
   countBadge: {
+    minWidth: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: '#4C59D7',
-    borderRadius: 12,
-    paddingVertical: 2,
-    paddingHorizontal: 10,
-    minWidth: 28,
+    justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 6,
   },
-  countText: {
-    fontSize: 13,
+  countBadgeText: {
+    fontSize: 12,
     fontFamily: 'PlusJakartaSans_700Bold',
     color: '#FFFFFF',
   },
 
-  // Empty states
-  emptyCol: {
-    paddingVertical: 48,
-    alignItems: 'center',
+  // Divider
+  divider: {
+    height: 1,
+    backgroundColor: '#F0F0F6',
+    marginHorizontal: 20,
+    marginTop: 10,
   },
+
+  // Empty states
+  emptyCol: { paddingVertical: 48, alignItems: 'center' },
   emptyColText: {
     fontSize: 14,
     fontFamily: 'PlusJakartaSans_400Regular',
@@ -412,3 +486,4 @@ const styles = StyleSheet.create({
   },
   fabIcon: { fontSize: 26, color: '#FFFFFF', lineHeight: 28, marginTop: -2 },
 });
+
