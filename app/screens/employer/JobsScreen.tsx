@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -16,31 +16,25 @@ import Animated, {
   withSpring,
   useAnimatedStyle,
 } from 'react-native-reanimated';
-import Svg, { Rect } from 'react-native-svg';
-import { BellIcon } from '../../components/ui/AppIcons';
-import FloatingTabBar from '../../components/employer/FloatingTabBar';
 import { supabase } from '../../lib/supabase';
 import { useEmployer } from '../../context/EmployerContext';
-import { PipelineCandidate, JobPosting, PipelineStage } from '../../types/employer';
-import StageChips from '../../components/employer/pipeline/StageChips';
+import { PipelineCandidate, PipelineStage } from '../../types/employer';
 import CandidateMiniCard from '../../components/employer/pipeline/CandidateMiniCard';
 import CandidateDetailSheet from '../../components/employer/candidate-detail/CandidateDetailSheet';
 import PostRoleSheet from '../../components/employer/post-role/PostRoleSheet';
-import JobHeader from '../../components/employer/pipeline/JobHeader';
 import EmployerTopBar from '../../components/employer/EmployerTopBar';
 import EmployerProfileSheet from '../../components/employer/EmployerProfileSheet';
+import { getOrCreateConversation } from '../../lib/database';
+import { useAuth } from '../../context/AuthContext';
+import ChatScreen from '../ChatScreen';
 
-
-// ─── FAB component ────────────────────────────────────────────────────────────
+// ─── FAB ──────────────────────────────────────────────────────────────────────
 function FAB({ onPress }: { onPress: () => void }) {
   const scale = useSharedValue(0);
-
   useEffect(() => {
     scale.value = withDelay(400, withSpring(1, { mass: 1, damping: 12, stiffness: 180 }));
   }, []);
-
   const fabStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-
   return (
     <Animated.View style={[styles.fab, fabStyle, fabShadow]}>
       <TouchableOpacity onPress={onPress} style={styles.fabInner} activeOpacity={0.85}>
@@ -58,7 +52,7 @@ const fabShadow = {
   elevation: 8,
 } as any;
 
-// ─── Stage header inside the list ─────────────────────────────────────────────
+// ─── Stage config ──────────────────────────────────────────────────────────────
 const STAGE_CONFIG: Record<string, { label: string; dot: string }> = {
   new_matches: { label: 'New Matches', dot: '#4C59D7' },
   testing:     { label: 'Testing',     dot: '#F57C00' },
@@ -67,16 +61,19 @@ const STAGE_CONFIG: Record<string, { label: string; dot: string }> = {
   rejected:    { label: 'Rejected',    dot: '#EF4444' },
 };
 
-// ─── Inner screen ─────────────────────────────────────────────────────────────
-import { getOrCreateConversation } from '../../lib/database';
-import { useAuth } from '../../context/AuthContext';
-import ChatScreen from '../ChatScreen';
+const STAGE_KEYS = [
+  { key: 'new_matches' as PipelineStage, label: 'New Matches' },
+  { key: 'testing'     as PipelineStage, label: 'Testing' },
+  { key: 'interview'   as PipelineStage, label: 'Interview' },
+  { key: 'hired'       as PipelineStage, label: 'Hired' },
+  { key: 'rejected'    as PipelineStage, label: 'Rejected' },
+];
 
+// ─── Inner screen ──────────────────────────────────────────────────────────────
 function JobsInner() {
   const { state, dispatch, stageCounts, moveCandidate } = useEmployer();
   const { user } = useAuth();
 
-  // Chat state
   const [chatOpen, setChatOpen] = useState(false);
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [chatCandidate, setChatCandidate] = useState<PipelineCandidate | null>(null);
@@ -84,12 +81,10 @@ function JobsInner() {
   const [companyName, setCompanyName] = useState('Exposys');
 
   useEffect(() => {
-    supabase.auth.getUser().then(
-      ({ data }) => {
-        const name = data.user?.user_metadata?.company_name;
-        if (name) setCompanyName(name);
-      }
-    );
+    supabase.auth.getUser().then(({ data }) => {
+      const name = data.user?.user_metadata?.company_name;
+      if (name) setCompanyName(name);
+    });
   }, []);
 
   const handleCandidatePress = useCallback((c: PipelineCandidate) => {
@@ -98,9 +93,7 @@ function JobsInner() {
   }, [dispatch]);
 
   const handleMoveCandidate = useCallback(
-    (id: string, from: PipelineStage, to: PipelineStage) => {
-      moveCandidate(id, from, to);
-    },
+    (id: string, from: PipelineStage, to: PipelineStage) => moveCandidate(id, from, to),
     [moveCandidate],
   );
 
@@ -131,7 +124,6 @@ function JobsInner() {
       hired: 'Hired',
       rejected: 'Rejected',
     };
-    
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         {
@@ -142,18 +134,14 @@ function JobsInner() {
         (idx: number) => {
           if (idx === 0) handleCandidatePress(c);
           if (idx === 1) {
-            // simplified move sheet for now or dispatch
-            // ideally we'd show another sheet with the stages
             ActionSheetIOS.showActionSheetWithOptions(
               {
                 options: [...moveStages.filter(s => s !== c.stage).map(s => stageLabels[s]), 'Cancel'],
                 cancelButtonIndex: moveStages.length - 1,
               },
               (stageIdx: number) => {
-                const stagesFiltered = moveStages.filter(s => s !== c.stage);
-                if (stageIdx < stagesFiltered.length) {
-                  handleMoveCandidate(c.id, c.stage, stagesFiltered[stageIdx]);
-                }
+                const filtered = moveStages.filter(s => s !== c.stage);
+                if (stageIdx < filtered.length) handleMoveCandidate(c.id, c.stage, filtered[stageIdx]);
               }
             );
           }
@@ -162,16 +150,12 @@ function JobsInner() {
         }
       );
     } else {
-      Alert.alert(
-        c.candidateName,
-        'Choose an action',
-        [
-          { text: 'View Profile', onPress: () => handleCandidatePress(c) },
-          { text: 'Message Candidate', onPress: () => handleMessage(c) },
-          { text: 'Reject', style: 'destructive', onPress: () => handleDismiss(c.id) },
-          { text: 'Cancel', style: 'cancel' },
-        ],
-      );
+      Alert.alert(c.candidateName, 'Choose an action', [
+        { text: 'View Profile', onPress: () => handleCandidatePress(c) },
+        { text: 'Message Candidate', onPress: () => handleMessage(c) },
+        { text: 'Reject', style: 'destructive', onPress: () => handleDismiss(c.id) },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
     }
   }, [handleCandidatePress, handleMessage, handleDismiss, handleMoveCandidate]);
 
@@ -182,14 +166,13 @@ function JobsInner() {
 
   if (state.isLoading) {
     return (
-      <SafeAreaView style={styles.loading} edges={['top']}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-        <ActivityIndicator size="large" color="#4C59D7" />
+        <ActivityIndicator size="large" color="#4C59D7" style={{ marginTop: 40 }} />
       </SafeAreaView>
     );
   }
 
-  // Empty state — no jobs yet
   if (!selectedJob) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -211,6 +194,10 @@ function JobsInner() {
           visible={state.showPostRole}
           onClose={() => dispatch({ type: 'SET_SHOW_POST_ROLE', value: false })}
         />
+        <EmployerProfileSheet
+          visible={showProfileSheet}
+          onClose={() => setShowProfileSheet(false)}
+        />
       </SafeAreaView>
     );
   }
@@ -224,57 +211,55 @@ function JobsInner() {
         onBellPress={() => {}}
       />
 
-      {/* ── ROLE HEADER ── */}
-      <View style={styles.header}>
-        <Text style={styles.roleTitle}>{selectedJob.roleTitle}</Text>
-        <Text style={styles.companyName}>{companyName}</Text>
-        <Text style={styles.candidateCount}>{selectedJob.candidateCount} candidates</Text>
+      {/* ── ROLE SECTION ── */}
+      <View style={styles.roleSection}>
+        <Text style={styles.roleName}>{selectedJob.roleTitle}</Text>
+        <View style={styles.roleMetaRow}>
+          <Text style={styles.companyName}>{companyName}</Text>
+          <View style={styles.metaDot} />
+          <Text style={styles.candidateCount}>{selectedJob.candidateCount} candidates</Text>
+        </View>
       </View>
 
       {/* ── FILTER CHIPS ── */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={styles.filterScroll}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 4, gap: 8 }}
+        contentContainerStyle={styles.filterRow}
       >
-        {([
-          { key: 'new_matches', label: 'New Matches' },
-          { key: 'testing',     label: 'Testing' },
-          { key: 'interview',   label: 'Interview' },
-          { key: 'hired',       label: 'Hired' },
-          { key: 'rejected',    label: 'Rejected' },
-        ] as { key: PipelineStage; label: string }[]).map((s) => {
+        {STAGE_KEYS.map((s) => {
           const count = stageCounts[s.key] ?? 0;
           const isActive = activeStage === s.key;
           return (
             <TouchableOpacity
               key={s.key}
-              style={[styles.filterChip, isActive && styles.filterChipActive]}
+              style={[styles.chip, isActive && styles.chipActive]}
               onPress={() => dispatch({ type: 'SET_STAGE_FILTER', stage: s.key })}
               activeOpacity={0.75}
             >
-              <Text style={[styles.filterChipText, isActive && styles.filterChipTextActive]}>
-                {s.label} {count}
+              <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
+                {s.label}
+                {'  '}
+                <Text style={[styles.chipCount, isActive && styles.chipCountActive]}>
+                  {count}
+                </Text>
               </Text>
             </TouchableOpacity>
           );
         })}
       </ScrollView>
 
-      {/* ── SECTION HEADER ── */}
-      <View style={styles.sectionHeader}>
-        <View style={styles.sectionLeft}>
-          <View style={[styles.dot, { backgroundColor: stageCfg.dot }]} />
-          <Text style={styles.sectionTitle}>{stageCfg.label}</Text>
-        </View>
-        <View style={styles.countBadge}>
-          <Text style={styles.countBadgeText}>{candidates.length}</Text>
-        </View>
-      </View>
-
       {/* ── DIVIDER ── */}
       <View style={styles.divider} />
+
+      {/* ── COUNT ROW ── */}
+      <View style={styles.countRow}>
+        <View style={styles.countLeft}>
+          <View style={[styles.activeDot, { backgroundColor: stageCfg.dot }]} />
+          <Text style={styles.activeLabel}>{stageCfg.label}</Text>
+        </View>
+        <Text style={styles.countNumber}>{candidates.length} candidates</Text>
+      </View>
 
       {/* ── CANDIDATE LIST ── */}
       <FlatList
@@ -282,10 +267,10 @@ function JobsInner() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={{
           paddingHorizontal: 16,
-          paddingTop: 12,
-          paddingBottom: 180,
+          paddingTop: 8,
+          paddingBottom: 160,
         }}
-        ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+        ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         showsVerticalScrollIndicator={false}
         renderItem={({ item, index }) => (
           <CandidateMiniCard
@@ -314,13 +299,10 @@ function JobsInner() {
         onSendAssessment={() => {}}
         onPass={(c) => dispatch({ type: 'DISMISS_CANDIDATE', candidateId: c.id })}
       />
-
       <PostRoleSheet
         visible={state.showPostRole}
         onClose={() => dispatch({ type: 'SET_SHOW_POST_ROLE', value: false })}
       />
-
-      {/* Chat modal overlay */}
       <ChatScreen
         visible={chatOpen}
         conversationId={activeConvId}
@@ -329,8 +311,6 @@ function JobsInner() {
         jobTitle={selectedJob.roleTitle}
         onClose={() => { setChatOpen(false); setActiveConvId(null); setChatCandidate(null); }}
       />
-
-      {/* Profile Sheet */}
       <EmployerProfileSheet
         visible={showProfileSheet}
         onClose={() => setShowProfileSheet(false)}
@@ -346,96 +326,114 @@ export default function JobsScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
-  loading: { flex: 1, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
 
-  // Role header
-  header: {
-    backgroundColor: '#FFFFFF',
+  // Role section
+  roleSection: {
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
+    paddingTop: 14,
+    paddingBottom: 12,
+    backgroundColor: '#FFFFFF',
   },
-  roleTitle: {
-    fontSize: 24,
+  roleName: {
+    fontSize: 22,
     fontFamily: 'PlusJakartaSans_700Bold',
     color: '#1A1A2E',
-    lineHeight: 32,
+    lineHeight: 28,
+  },
+  roleMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 6,
   },
   companyName: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: 'PlusJakartaSans_400Regular',
     color: '#6B7280',
-    marginTop: 2,
+  },
+  metaDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: '#9CA3AF',
   },
   candidateCount: {
     fontSize: 13,
     fontFamily: 'PlusJakartaSans_400Regular',
     color: '#6B7280',
-    marginTop: 12,
   },
 
   // Filter chips
-  filterScroll: { backgroundColor: '#FFFFFF', maxHeight: 52 },
-  filterChip: {
+  filterRow: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: '#E0E0E8',
+    paddingVertical: 10,
+    gap: 8,
     backgroundColor: '#FFFFFF',
   },
-  filterChipActive: {
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#E0E0EC',
+    backgroundColor: '#FFFFFF',
+  },
+  chipActive: {
     backgroundColor: '#4C59D7',
     borderColor: '#4C59D7',
   },
-  filterChipText: {
+  chipText: {
     fontSize: 13,
     fontFamily: 'PlusJakartaSans_500Medium',
-    color: '#1A1A2E',
+    color: '#374151',
   },
-  filterChipTextActive: {
+  chipTextActive: {
     color: '#FFFFFF',
     fontFamily: 'PlusJakartaSans_600SemiBold',
   },
-
-  // Section header
-  sectionHeader: {
-    backgroundColor: '#FFFFFF',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 4,
-  },
-  sectionLeft: { flexDirection: 'row', alignItems: 'center' },
-  dot: { width: 8, height: 8, borderRadius: 4, marginRight: 8 },
-  sectionTitle: {
-    fontSize: 15,
-    fontFamily: 'PlusJakartaSans_700Bold',
-    color: '#1A1A2E',
-  },
-  countBadge: {
-    minWidth: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: '#4C59D7',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 6,
-  },
-  countBadgeText: {
+  chipCount: {
     fontSize: 12,
-    fontFamily: 'PlusJakartaSans_700Bold',
-    color: '#FFFFFF',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
+    color: '#9CA3AF',
+  },
+  chipCountActive: {
+    color: 'rgba(255,255,255,0.8)' as any,
   },
 
   // Divider
   divider: {
     height: 1,
-    backgroundColor: '#F0F0F6',
-    marginHorizontal: 20,
-    marginTop: 10,
+    backgroundColor: '#F0F0F5',
+  },
+
+  // Count row
+  countRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#FFFFFF',
+  },
+  countLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  activeDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+  },
+  activeLabel: {
+    fontSize: 13,
+    fontFamily: 'PlusJakartaSans_600SemiBold',
+    color: '#1A1A2E',
+  },
+  countNumber: {
+    fontSize: 12,
+    fontFamily: 'PlusJakartaSans_400Regular',
+    color: '#9CA3AF',
   },
 
   // Empty states
@@ -486,4 +484,3 @@ const styles = StyleSheet.create({
   },
   fabIcon: { fontSize: 26, color: '#FFFFFF', lineHeight: 28, marginTop: -2 },
 });
-
